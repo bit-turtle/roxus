@@ -3,17 +3,26 @@
 #include "efi/types.h"
 #include "efi/handle.h"
 
-efi_status_t efi_main(efi_handle_t* handle, struct efi_system_table* system_table) {
+efi_status_t efi_main(efi_handle_t* handle, struct efi_system_table* system) {
   efi_status_t status;
 
-  status = system_table->output->clearScreen(system_table->output);
-  if (status != 0) return status;
+  status = system->output->clearScreen(system->output);
+  if (status != EFI_SUCCESS) return status;
 
-  status = system_table->output->outputString(system_table->output, u"Welcome to ROXUS!");
-  if (status != 0) return status;
+  status = system->output->outputString(system->output, u"Welcome to ROXUS!\n\n\r> ");
+  if (status != EFI_SUCCESS) return status;
 
-  for (int i = 2000000000; i > 0; i--) {
-
+  while (true) {
+    struct efi_input_key key;
+    status = system->input->readKey(system->input, &key);
+    if (status == EFI_SUCCESS) {
+      if (key.unicode == u'\n')
+        status = system->output->outputString(system->output, u"\n\r> ");
+      else
+        status = system->output->outputString(system->output, &key.unicode);
+      if (status != EFI_SUCCESS) return status;
+    }
+    else if (status != EFI_NOT_READY) return status;
   }
 
   return 0;
