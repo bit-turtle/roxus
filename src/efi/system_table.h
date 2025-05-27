@@ -9,6 +9,9 @@
 #include "boot_services.h"
 #include "config_table.h"
 
+#ifndef EFI_SYSTEM_TABLE
+#define EFI_SYSTEM_TABLE
+
 struct efi_system_table {
   struct efi_table_header header;
   char* vendor;
@@ -24,3 +27,5 @@ struct efi_system_table {
   uint64_t number_of_table_entries;
   struct efi_configuration_table* config;
 };
+
+#endif

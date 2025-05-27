@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+#ifndef EFI_TYPES
+#define EFI_TYPES
 
 typedef uint64_t efi_uint_t;
 typedef uint16_t efi_char_t;
@@ -53,3 +55,5 @@ typedef uint64_t efi_status_t;
 #define EFI_WARN_STALE_DATA 5
 #define EFI_WARN_FILE_SYSTEM 6
 #define EFI_WARN_RESET_REQUIRED 7
+
+#endif

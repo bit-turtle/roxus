@@ -2,6 +2,9 @@
 
 #include "table_header.h"
 
+#ifndef EFI_RUNTIME_SERVICES
+#define EFI_RUNTIME_SERVICES
+
 struct efi_runtime_services {
   struct efi_table_header header;
   // Time
@@ -25,3 +28,5 @@ struct efi_runtime_services {
   // Misc (UEFI 2.0)
   void* queryVariableInfo;
 };
+
+#endif

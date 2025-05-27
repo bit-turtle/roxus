@@ -2,6 +2,9 @@
 
 #include "table_header.h"
 
+#ifndef EFI_BOOT_SERVICES
+#define EFI_BOOT_SERVICES
+
 struct efi_boot_services {
   struct efi_table_header header;
   // Task Priority
@@ -59,3 +62,5 @@ struct efi_boot_services {
   void* setMem;
   void* createEventEx;
 };
+
+#endif

@@ -3,6 +3,9 @@
 
 #include "types.h"
 
+#ifndef EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL
+#define EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL
+
 struct simple_text_output_mode {
   int32_t maxMode;
   // Current
@@ -25,3 +28,5 @@ struct efi_simple_text_output_protocol {
   efi_status_t (*enableCursor) (struct efi_simple_text_output_protocol*, bool);
   struct simple_text_output_mode* mode;
 };
+
+#endif
