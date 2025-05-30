@@ -13,9 +13,21 @@ efi_status_t input(struct efi_system_table* system, efi_char_t* string, unsigned
       efi_char_t str[2];
       str[0] = key.unicode;
       if (key.unicode == u'\r') {
-        system->output->outputString(system->output, u"\n\r");
+        status = system->output->outputString(system->output, u"\n\r");
         if (status != EFI_SUCCESS) return status;
         break;
+      }
+      else if (key.unicode == u'\0') {
+        status = system->output->outputString(system->output, u"^");
+        if (status != EFI_SUCCESS) return status;
+        switch (key.scancode) {
+          case 0x17:
+            *string++ = u'\e';
+            break;
+          default:
+            *string++ = u'^';
+        }
+        offset++;
       }
       else {
         if (key.unicode != u'\b' && offset < length || key.unicode == u'\b' && offset > 0) {
@@ -34,6 +46,7 @@ efi_status_t input(struct efi_system_table* system, efi_char_t* string, unsigned
     }
     else if (status != EFI_NOT_READY) return status;
   }
+  *string = u'\0';
 
   return EFI_SUCCESS;
 }
