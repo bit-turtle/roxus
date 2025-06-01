@@ -1,6 +1,6 @@
-#include "efi/system_table.h"
+// User Input System
 
-#include "efi/types.h"
+#include "input.h"
 
 efi_status_t input(struct efi_system_table* system, efi_char_t* string, unsigned length) {
   efi_status_t status;

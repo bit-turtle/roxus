@@ -1,36 +1,47 @@
 #include <stddef.h>
+#include <stdint.h>
 
 #include "efi/system_table.h"
 
 #include "efi/types.h"
 #include "efi/handle.h"
 
-#include "input.h"
-#include "output.h"
+#include "bsod.h"
+
+#include "term.h"
 
 efi_status_t efi_main(efi_handle_t* handle, struct efi_system_table* system) {
   efi_status_t status;
 
+  // Disable Watchdog Timer
+  bool watchdog = false;
+  status = system->boot_services->setWatchdogTimer(0, 0x10000, 0, NULL);
+  if (status != EFI_SUCCESS && status != EFI_UNSUPPORTED) watchdog = true;
+
+  // Clear Screen
   status = system->output->clearScreen(system->output);
-  if (status != EFI_SUCCESS) return status;
+  if (status != EFI_SUCCESS) bsod(system, status);
 
-  efi_char_t welcome[] = u"Welcome to ROXUS!\n\n\r";
+  // Welcome Message
+  status = system->output->outputString(system->output, u"Welcome to Roxus!\n\r");
+  if (status != EFI_SUCCESS) bsod(system, status);
 
-  status = system->output->outputString(system->output, welcome);
-  if (status != EFI_SUCCESS) return status;
-
-  status = system->output->enableCursor(system->output, true);
-  if (status != EFI_SUCCESS) return status;
-
-  while (true) {
-    status = system->output->outputString(system->output, u"> ");
-    if (status != EFI_SUCCESS) return status;
-    efi_char_t string[256];
-    string[0] = u'\0';
-    status = input(system, &string[0], 256);
-    if (status != EFI_SUCCESS) return status;
-    status = output(system, string);
+  // Watchdog Warning
+  if (watchdog) {
+    status = system->output->outputString(system->output, u"Warning: System may Restart Unexpectedly [Watchdog Error]\n\n\r");
+    if (status != EFI_SUCCESS) bsod(system, status);
+  }
+  else {
+    status = system->output->outputString(system->output, u"All Systems Operational\n\n\r");
   }
 
-  return 0;
+  // Enable Cursor
+  status = system->output->enableCursor(system->output, true);
+  if (status != EFI_SUCCESS) bsod(system, status);
+
+  // Terminal
+  status = term(system);
+  if (status != EFI_SUCCESS) bsod(system, status);
+
+  return EFI_SUCCESS;
 }

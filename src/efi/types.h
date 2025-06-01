@@ -8,6 +8,43 @@ typedef uint16_t efi_char_t;
 
 typedef uint64_t efi_status_t;
 
+// Memory
+typedef uint64_t efi_physical_address_t;
+typedef uint64_t efi_virtual_address_t;
+
+// Text Attributes
+#define EFI_FOREGROUND 0x0f
+#define EFI_BACKGROUND 0xf0
+
+// Text Colors
+#define EFI_BLACK 0x00
+#define EFI_BLUE 0x01
+#define EFI_GREEN 0x02
+#define EFI_CYAN 0x03
+#define EFI_RED 0x04
+#define EFI_MAGENTA 0x05
+#define EFI_BROWN 0x06
+#define EFI_LIGHTGRAY 0x07
+#define EFI_BRIGHT 0x08
+#define EFI_DARKGRAY 0x08
+#define EFI_LIGHTBLUE 0x09
+#define EFI_LIGHTGREEN 0x0a
+#define EFI_LIGHTCYAN 0x0b
+#define EFI_LIGHTRED 0x0c
+#define EFI_LIGHTMAGENTA 0x0d
+#define EFI_YELLOW 0x0e
+#define EFI_WHITE 0x0f
+
+// Background Colors
+#define EFI_BACKGROUND_BLACK 0x00
+#define EFI_BACKGROUND_BLUE 0x10
+#define EFI_BACKGROUND_GREEN 0x20
+#define EFI_BACKGROUND_CYAN 0x30
+#define EFI_BACKGROUND_RED 0x40
+#define EFI_BACKGROUND_MAGENTA 0x50
+#define EFI_BACKGROUND_BROWN 0x60
+#define EFI_BACKGROUND_LIGHTGRAY 0x70
+
 // EFI Success Code
 #define EFI_SUCCESS 0
 

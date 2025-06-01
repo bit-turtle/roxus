@@ -12,16 +12,19 @@ root/efi/boot/bootx64.efi: build/bootx64.efi
 	mkdir -p root/efi/boot/
 	cp build/bootx64.efi root/efi/boot/bootx64.efi
 
-build/bootx64.efi: build/main.o build/libc.o build/input.o build/output.o
+build/bootx64.efi: build/main.o build/bsod.o build/libc.o build/string.o build/input.o build/output.o build/term.o
 	lld \
 		-flavor link \
 		-subsystem:efi_application \
 		-entry:efi_main \
 		-out:build/bootx64.efi \
 		build/main.o \
+		build/bsod.o \
 		build/libc.o \
+		build/string.o \
 		build/input.o \
-		build/output.o
+		build/output.o \
+		build/term.o
 
 define compile =
 	echo $1
@@ -39,12 +42,24 @@ endef
 build/main.o: src/main.c
 	$(call compile,main)
 
+# BSOD
+build/bsod.o: src/bsod.c
+	$(call compile,bsod)
+
 # LibC
 build/libc.o: src/libc.c
 	$(call compile,libc)
+
+# Strings
+build/string.o: src/string.c
+	$(call compile,string)
 
 # Input & Output
 build/input.o: src/input.c
 	$(call compile,input)
 build/output.o: src/output.c
 	$(call compile,output)
+
+# Terminal
+build/term.o: src/term.c
+	$(call compile,term)

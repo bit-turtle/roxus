@@ -2,18 +2,29 @@
 
 #include "table_header.h"
 
+#include "types.h"
+#include "handle.h"
+
 #ifndef EFI_BOOT_SERVICES
 #define EFI_BOOT_SERVICES
+
+struct efi_memory_descriptor {
+  uint32_t type;
+  efi_physical_address_t physicalStart;
+  efi_virtual_address_t virtualStart;
+  uint64_t numberOfPages;
+  uint64_t attribute;
+};
 
 struct efi_boot_services {
   struct efi_table_header header;
   // Task Priority
-  void* raiseTPL;
-  void* restoreTPL;
+  efi_uint_t (*raiseTPL)(efi_uint_t);
+  void (*restoreTPL)(efi_uint_t);
   // Memory
   void* allocatePages;
   void* freePages;
-  void* getMemoryMap;
+  efi_status_t (*getMemoryMap)(efi_uint_t*, struct efi_memory_descriptor*, efi_uint_t*, efi_uint_t*, uint32_t*);
   void* allocatePool;
   void* freePool;
   // Event & Timer
@@ -34,14 +45,15 @@ struct efi_boot_services {
   void* locateDevicePath;
   void* installConfigurationTable;
   // Image
-  void* imageUnload;
-  void* imageStart;
+  void* loadImage;
+  void* startImage;
   void* exit;
-  void* exitBootServices;
+  void* unloadImage;
+  efi_status_t (*exitBootServices)(efi_handle_t*, efi_uint_t);
   // Misc
   void* getNextMonotonicCount;
   void* stall;
-  void* setWatchdogTimer;
+  efi_status_t (*setWatchdogTimer)(efi_uint_t, uint64_t, efi_uint_t, efi_char_t*);
   // DriverSupport
   void* connectController;
   void* disconnectController;

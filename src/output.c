@@ -1,6 +1,4 @@
-#include "efi/system_table.h"
-
-#include "efi/types.h"
+#include "output.h"
 
 // Parses a Decimal Integer, Returns ending position in str pointer
 efi_uint_t parseInt(efi_char_t** str) {
@@ -26,6 +24,69 @@ efi_status_t output(struct efi_system_table* system, efi_char_t* string) {
       if (*buffer == u'[') switch (*string) {
         // Attribute Modes
         case u'm':
+          {
+            efi_char_t* offset = buffer+1;
+            do {
+              efi_uint_t code = parseInt(&offset);
+              switch (code) {
+                // Set Foreground Colors
+                case 30:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_BLACK);
+                  break;
+                case 31:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_RED);
+                  break;
+                case 32:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_GREEN);
+                  break;
+                case 33:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_YELLOW);
+                  break;
+                case 34:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_BLUE);
+                  break;
+                case 35:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_MAGENTA);
+                  break;
+                case 36:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_CYAN);
+                  break;
+                case 37:
+                case 39:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_WHITE);
+                  break;
+                // Set Background Colors
+                case 49:
+                case 40:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_BLACK);
+                  break;
+                case 41:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_RED);
+                  break;
+                case 42:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_GREEN);
+                  break;
+                case 43:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_BROWN);
+                  break;
+                case 44:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_BLUE);
+                  break;
+                case 45:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_MAGENTA);
+                  break;
+                case 46:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_CYAN);
+                  break;
+                case 47:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_LIGHTGRAY);
+                  break;
+              }
+              if (status != EFI_SUCCESS) return status;
+            }
+            while (*offset++ == u';');
+            escaped = false;
+          }
           break;
         // Cursor Position
         case u'f':
@@ -47,9 +108,26 @@ efi_status_t output(struct efi_system_table* system, efi_char_t* string) {
         case u'C':
         case u'D':
           {
-            efi_uint_t offset = getInt(buffer+1);
+            efi_uint_t offset = 1;  // Defaults to 1
+            if (buffer+1 != string) offset = getInt(buffer+1);
             efi_uint_t row = system->output->mode->cursorRow;
             efi_uint_t column = system->output->mode->cursorColumn;
+            switch (*string) {
+              case u'A':
+                row -= offset;
+                break;
+              case u'B':
+                row += offset;
+                break;
+              case u'C':
+                column += offset;
+                break;
+              case u'D':
+                column -= offset;
+                break;
+            }
+            status = system->output->setCursorPosition(system->output, row, column);
+            if (status != EFI_SUCCESS) return status;
           }
           break;
       }
