@@ -11,6 +11,7 @@ struct efi_time {
   uint8_t month;
   uint8_t day;
   uint8_t hour;
+  uint8_t minute;
   uint8_t second;
   uint8_t pad1;
   uint32_t nanosecond;
