@@ -1,8 +1,26 @@
 #include "string.h"
 
+// Parses a Decimal Integer, Returns ending position in str pointer
+efi_uint_t parseInt(efi_char_t** str) {
+  efi_uint_t val = 0;
+  while (**str != u'\0' && **str >= u'0' && **str <= u'9') {
+    val *= 10;
+    val += (efi_uint_t)(**str - u'0');
+    ++*str;
+  }
+  return val;
+}
+efi_uint_t getInt(efi_char_t* str) {
+  return parseInt(&str);
+}
+
 efi_char_t strcmp(efi_char_t* str1, efi_char_t* str2) {
 
-  while (*str1 && *str1++ == *str2++);
+  while (*str1) {
+    if (*str1 != *str2) break;
+    str1++;
+    str2++;
+  }
 
   return *str1 - *str2;
 

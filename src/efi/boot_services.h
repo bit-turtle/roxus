@@ -4,6 +4,7 @@
 
 #include "types.h"
 #include "handle.h"
+#include "protocol_guid.h"
 
 #ifndef EFI_BOOT_SERVICES
 #define EFI_BOOT_SERVICES
@@ -35,7 +36,7 @@ struct efi_boot_services {
   void* closeEvent;
   void* checkEvent;
   // Protocol Handler
-  void* installProtocolInterface;
+  efi_status_t (*installProtocolInterface)(efi_handle_t, struct efi_guid*, enum efi_interface_type, void*);
   void* reinstallProtocolInterface;
   void* uninstallProtocolInterface;
   void* handleProtocol;

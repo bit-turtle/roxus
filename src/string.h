@@ -3,6 +3,9 @@
 #include "efi/types.h"
 #include <stdbool.h>
 
+efi_uint_t parseInt(efi_char_t** str);
+efi_uint_t getInt(efi_char_t* str);
+
 efi_char_t strcmp(efi_char_t* str1, efi_char_t* str2);
 bool streq(efi_char_t* str1, efi_char_t* str2);
 

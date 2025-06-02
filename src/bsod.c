@@ -5,7 +5,6 @@
 efi_status_t bsod(struct efi_system_table* system, efi_status_t error) {
   // Set Screen Color to Blue
   efi_status_t status;
-  status |= system->output->reset(system->output, false);
   status |= system->output->setAttribute(system->output, EFI_WHITE | EFI_BACKGROUND_BLUE);
   status |= system->output->clearScreen(system->output);
   system->output->outputString(system->output, u"The Blue Screen of Death!\n\r");
@@ -138,6 +137,10 @@ efi_status_t bsod(struct efi_system_table* system, efi_status_t error) {
       break;
     case EFI_WARN_RESET_REQUIRED:
       system->output->outputString(system->output, u"EFI_WARN_RESET_REQUIRED");
+      break;
+    // Roxus Errors
+    case ROXUS_END:
+      system->output->outputString(system->output, u"ROXUS_END");
       break;
     default:
       if (error & EFI_ERROR_BIT)

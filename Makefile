@@ -1,5 +1,10 @@
 # Roxus Makefile
 
+# Settings
+target ?= x86_64
+name ?= x64
+
+# Rules
 all: root/efi/boot/bootx64.efi
 
 test: root/efi/boot/bootx64.efi
@@ -17,14 +22,8 @@ build/bootx64.efi: build/main.o build/bsod.o build/libc.o build/string.o build/i
 		-flavor link \
 		-subsystem:efi_application \
 		-entry:efi_main \
-		-out:build/bootx64.efi \
-		build/main.o \
-		build/bsod.o \
-		build/libc.o \
-		build/string.o \
-		build/input.o \
-		build/output.o \
-		build/term.o
+		-out:build/boot${name}.efi \
+		build/*.o
 
 define compile =
 	echo $1
@@ -35,7 +34,7 @@ define compile =
 		-MMD \
 		-mno-red-zone \
 		-std=c11 \
-		-target x86_64-unknown-windows
+		-target ${target}-unknown-windows
 endef
 
 # Main

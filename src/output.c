@@ -1,18 +1,9 @@
 #include "output.h"
 
-// Parses a Decimal Integer, Returns ending position in str pointer
-efi_uint_t parseInt(efi_char_t** str) {
-  efi_uint_t val = 0;
-  while (**str != u'\0' && **str >= u'0' && **str <= u'9') {
-    val *= 10;
-    val += (efi_uint_t)(**str - u'0');
-    ++*str;
-  }
-  return val;
-}
-efi_uint_t getInt(efi_char_t* str) {
-  return parseInt(&str);
-}
+#include "string.h"
+
+// Settings
+efi_uint_t tab_size = 8;
 
 efi_status_t output(struct efi_system_table* system, efi_char_t* string) {
   efi_status_t status;
@@ -29,7 +20,7 @@ efi_status_t output(struct efi_system_table* system, efi_char_t* string) {
             do {
               efi_uint_t code = parseInt(&offset);
               switch (code) {
-                // Set Foreground Colors
+                // Set Low Intensity Foreground Colors
                 case 30:
                   status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_BLACK);
                   break;
@@ -55,30 +46,63 @@ efi_status_t output(struct efi_system_table* system, efi_char_t* string) {
                 case 39:
                   status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_WHITE);
                   break;
-                // Set Background Colors
+                // Set High Intensity Foreground Colors
+                case 90:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_BROWN);
+                  break;
+                case 91:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_LIGHTRED);
+                  break;
+                case 92:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_LIGHTGREEN);
+                  break;
+                case 93:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_YELLOW);
+                  break;
+                case 94:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_LIGHTBLUE);
+                  break;
+                case 95:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_LIGHTMAGENTA);
+                  break;
+                case 96:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_LIGHTCYAN);
+                  break;
+                case 97:
+                  status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_BACKGROUND | EFI_LIGHTGRAY);
+                  break;
+                // Set High and Low Intesity Background Colors
                 case 49:
                 case 40:
+                case 100:
                   status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_BLACK);
                   break;
                 case 41:
+                case 101:
                   status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_RED);
                   break;
                 case 42:
+                case 102:
                   status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_GREEN);
                   break;
                 case 43:
+                case 103:
                   status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_BROWN);
                   break;
                 case 44:
+                case 104:
                   status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_BLUE);
                   break;
                 case 45:
+                case 105:
                   status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_MAGENTA);
                   break;
                 case 46:
+                case 106:
                   status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_CYAN);
                   break;
                 case 47:
+                case 107:
                   status = system->output->setAttribute(system->output, system->output->mode->attribute & EFI_FOREGROUND | EFI_BACKGROUND_LIGHTGRAY);
                   break;
               }
@@ -134,7 +158,7 @@ efi_status_t output(struct efi_system_table* system, efi_char_t* string) {
       else {
         switch (*buffer) {
           case u'c':
-            status = system->output->reset(system->output, false);
+            status = system->output->clearScreen(system->output);
             if (status != EFI_SUCCESS) return status;
             break;
         }
@@ -144,6 +168,13 @@ efi_status_t output(struct efi_system_table* system, efi_char_t* string) {
     else if (*string == u'\e') {
       escaped = true;
       buffer = string+1;
+    }
+    else if (*string == u'\t') {
+      efi_uint_t col = system->output->mode->cursorColumn;
+      while (++col%tab_size != 0) {
+        status = system->output->outputString(system->output, u" ");
+        if (status != EFI_SUCCESS) return status;
+      }
     }
     else {
       efi_char_t character[2] = { *string, u'\0' };
