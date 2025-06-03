@@ -1,0 +1,4 @@
+# Roxus Tupfile
+: foreach src/*.c |> clang -ffreestanding -mno-red-zone -c %f -o %o -std=c11 -target x86_64-unknown-windows |> build/%B.o
+: build/*.o |> lld -flavor link -subsystem:efi_application -entry:efi_main -out:build/bootx64.efi %f |> build/bootx64.efi
+: build/bootx64.efi |> mkdir -p root/efi/boot && cp %f root/efi/boot |> root/efi/boot/bootx64.efi

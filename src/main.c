@@ -18,12 +18,15 @@ efi_status_t efi_main(efi_handle_t handle, struct efi_system_table* system) {
   status = system->boot_services->setWatchdogTimer(0, 0x10000, 0, NULL);
   if (status != EFI_SUCCESS && status != EFI_UNSUPPORTED) watchdog = true;
 
-  // Install GOP
+  // Locate GOP
   bool efigop = false;
-  struct efi_graphics_output_protocol* gop;
+  struct efi_graphics_output_protocol* gop = NULL;
   struct efi_guid gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
-  status = system->boot_services->installProtocolInterface(&handle, &gop_guid, EFI_NATIVE_INTERFACE, gop);
+  status = system->boot_services->locateProtocol(&gop_guid, NULL, &gop);
   if (status != EFI_SUCCESS) efigop = true;
+  // Initialize GOP
+  status = gop->setMode(gop, 0);
+  if (status != EFI_SUCCESS) bsod(system, status);
 
   // Clear Screen
   status = system->output->clearScreen(system->output);
@@ -56,7 +59,7 @@ efi_status_t efi_main(efi_handle_t handle, struct efi_system_table* system) {
   if (status != EFI_SUCCESS) bsod(system, status);
 
   // Terminal
-  status = term(system);
+  status = term(system, gop);
   if (status != EFI_SUCCESS) bsod(system, status);
 
   bsod(system, ROXUS_END);

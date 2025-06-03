@@ -65,7 +65,7 @@ struct efi_boot_services {
   // Library
   void* protocolsPerHandle;
   void* locateHandleBuffer;
-  void* locateProtocol;
+  efi_status_t (*locateProtocol)(struct efi_guid*, void*, void*);
   void* installMultipleProtocolInterfaces;
   void* uninstallMultipleProtocolInterfaces;
   // CRC32

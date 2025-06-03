@@ -62,11 +62,10 @@ enum efi_graphics_output_blt_operation {
   EFI_BLT_VIDEO_TO_VIDEO,
   EFI_GRAPHICS_OUTPUT_BLT_OPERATION_MAX
 };
-
 struct efi_graphics_output_protocol {
   efi_status_t (*queryMode)(struct efi_graphics_output_protocol*, uint32_t, efi_uint_t*, struct efi_graphics_output_mode_information**);
   efi_status_t (*setMode)(struct efi_graphics_output_protocol*, uint32_t);
-  efi_status_t (*blt)(struct efi_graphics_output_protocol*, struct efi_graphics_output_blt_pixel*, enum efi_graphics_output_blt_operation, efi_uint_t, efi_uint_t, efi_uint_t, efi_uint_t, efi_uint_t);
+  efi_status_t (*blt)(struct efi_graphics_output_protocol*, struct efi_graphics_output_blt_pixel*, enum efi_graphics_output_blt_operation, efi_uint_t, efi_uint_t, efi_uint_t, efi_uint_t, efi_uint_t, efi_uint_t, efi_uint_t);
   struct efi_graphics_output_protocol_mode* mode;
 };
 

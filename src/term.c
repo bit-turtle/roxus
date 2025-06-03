@@ -10,7 +10,7 @@
 #include "string.h"
 #include "bsod.h"
 
-efi_status_t term(struct efi_system_table* system) {
+efi_status_t term(struct efi_system_table* system, struct efi_graphics_output_protocol* gop) {
   efi_status_t status;
 
   bool running = true;
@@ -20,14 +20,14 @@ efi_status_t term(struct efi_system_table* system) {
     if (status != EFI_SUCCESS) return status;
     status = input(system, buffer, 256);
     if (status != EFI_SUCCESS) return status;
-    status = command(system, buffer, &running);
+    status = command(system, gop, buffer, &running);
     if (status != EFI_SUCCESS) return status;
   }
 
   return EFI_SUCCESS;
 }
 
-efi_status_t command(struct efi_system_table* system, efi_char_t* command, bool* running) {
+efi_status_t command(struct efi_system_table* system, struct efi_graphics_output_protocol* gop, efi_char_t* command, bool* running) {
   efi_status_t status;
 
   efi_uint_t argc = 1;
@@ -48,6 +48,10 @@ efi_status_t command(struct efi_system_table* system, efi_char_t* command, bool*
   // Lookup Program
   if (streq(argv[0], u"exit")) {
     *running = false;
+  }
+  else if (streq(argv[0], u"clear")) {
+    status = system->output->clearScreen(system->output);
+    if (status != EFI_SUCCESS) return status;
   }
   else if (streq(argv[0], u"reset")) {
     bool valid = true;
@@ -117,6 +121,45 @@ efi_status_t command(struct efi_system_table* system, efi_char_t* command, bool*
         status = system->output->outputString(system->output, u"?");
       if (status != EFI_SUCCESS) return status;
     }
+  }
+  // GOP Test Commands
+  else if (streq(argv[0], u"gopinfo")) {
+    efi_char_t buf[128];
+    system->output->outputString(system->output, u"Mode: ");
+    system->output->outputString(system->output, itoa(gop->mode->mode, buf, 10));
+    system->output->outputString(system->output, u"/");
+    system->output->outputString(system->output, itoa(gop->mode->maxMode, buf, 10));
+    system->output->outputString(system->output, u"\n\rResolution: ");
+    system->output->outputString(system->output, itoa(gop->mode->info->horizontalResolution, buf, 10));
+    system->output->outputString(system->output, u":");
+    system->output->outputString(system->output, itoa(gop->mode->info->verticalResolution, buf, 10));
+    system->output->outputString(system->output, u"\n\rFramebuffer Size: ");
+    system->output->outputString(system->output, itoa(gop->mode->framebufferSize, buf, 10));
+  }
+  else if (streq(argv[0], u"gopmode")) {
+    if (argc > 1) {
+      uint32_t mode = getInt(argv[1]);
+      if (mode < gop->mode->maxMode) {
+        status = gop->setMode(gop, mode);
+        if (status != EFI_SUCCESS) return status;
+        status = system->output->reset(system->output, false);
+        if (status != EFI_SUCCESS) return status;
+        system->output->outputString(system->output, u"GOP Mode Set!");
+      }
+      else {
+        system->output->outputString(system->output, u"Mode must be less than max mode");
+      }
+    }
+    else {
+      system->output->outputString(system->output, u"Invalid Parameter");
+    }
+  }
+  else if (streq(argv[0], u"goptest")) {
+    struct efi_graphics_output_blt_pixel pixel;
+    pixel.red = getInt(argv[1]);
+    pixel.green = getInt(argv[2]);
+    pixel.blue = getInt(argv[3]);
+    gop->blt(gop, &pixel, EFI_BLT_VIDEO_FILL, 0, 0, 0, 0, 500, 500, 0);
   }
   else {
     status = system->output->outputString(system->output, u"Unknown Command");
