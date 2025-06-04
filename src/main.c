@@ -24,9 +24,36 @@ efi_status_t efi_main(efi_handle_t handle, struct efi_system_table* system) {
   struct efi_guid gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
   status = system->boot_services->locateProtocol(&gop_guid, NULL, &gop);
   if (status != EFI_SUCCESS) efigop = true;
-  // Initialize GOP
-  status = gop->setMode(gop, 0);
-  if (status != EFI_SUCCESS) bsod(system, status);
+
+  // Find Best Text Mode
+  {
+    efi_uint_t best_width = 0, best_height = 0;
+    efi_uint_t best_mode = 0;
+    for (efi_uint_t mode = 0; mode < system->output->mode->maxMode; mode++) {
+      efi_uint_t width, height;
+      status = system->output->queryMode(system->output, mode, &width, &height);
+      if (status == EFI_SUCCESS)
+      if (width > best_width || height > best_height ) {
+        best_width = width;
+        best_height = height;
+        best_mode = mode;
+      }
+    }
+    status = system->output->setMode(system->output, best_mode);
+    if (status != EFI_SUCCESS) bsod(system, status);
+  }
+
+  // Start GOP (If not started)
+  {
+    struct efi_graphics_output_mode_information* info;
+    efi_uint_t infosize, nativeMode = 0;
+    status = gop->queryMode(gop, gop->mode==NULL?0:gop->mode->mode, &infosize, &info);
+    if (status == EFI_NOT_STARTED) {
+      // default to mode zero
+      status = gop->setMode(gop, 0);
+      if (status != EFI_SUCCESS) bsod(system, status);
+    }
+  }
 
   // Clear Screen
   status = system->output->clearScreen(system->output);

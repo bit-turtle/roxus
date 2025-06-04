@@ -140,11 +140,14 @@ efi_status_t command(struct efi_system_table* system, struct efi_graphics_output
     if (argc > 1) {
       uint32_t mode = getInt(argv[1]);
       if (mode < gop->mode->maxMode) {
+        // Set GOP Mode
         status = gop->setMode(gop, mode);
-        if (status != EFI_SUCCESS) return status;
-        status = system->output->reset(system->output, false);
-        if (status != EFI_SUCCESS) return status;
-        system->output->outputString(system->output, u"GOP Mode Set!");
+        // Failure message
+        if (status != EFI_SUCCESS)
+          system->output->outputString(system->output, u"Failed to set GOP Mode!");
+        // Success Message
+        else
+          system->output->outputString(system->output, u"GOP Mode Set!");
       }
       else {
         system->output->outputString(system->output, u"Mode must be less than max mode");
@@ -160,6 +163,36 @@ efi_status_t command(struct efi_system_table* system, struct efi_graphics_output
     pixel.green = getInt(argv[2]);
     pixel.blue = getInt(argv[3]);
     gop->blt(gop, &pixel, EFI_BLT_VIDEO_FILL, 0, 0, 0, 0, 500, 500, 0);
+  }
+  else if (streq(argv[0], u"textinfo")) {
+    efi_char_t buf[128];
+    system->output->outputString(system->output, u"Mode: ");
+    system->output->outputString(system->output, itoa(system->output->mode->mode, buf, 10));
+    system->output->outputString(system->output, u"/");
+    system->output->outputString(system->output, itoa(system->output->mode->maxMode, buf, 10));
+    system->output->outputString(system->output, u"\n\rAttribute: ");
+    system->output->outputString(system->output, itoa(system->output->mode->attribute, buf, 10));
+  }
+  else if (streq(argv[0], u"textmode")) {
+    if (argc > 1) {
+      uint32_t mode = getInt(argv[1]);
+      if (mode < system->output->mode->maxMode) {
+        // Set Text Mode
+        status = system->output->setMode(system->output, mode);
+        // Failure Message
+        if (status != EFI_SUCCESS)
+          system->output->outputString(system->output, u"Failed to set Text Mode!");
+        // Success Message
+        else
+          system->output->outputString(system->output, u"Text Mode Set!");
+      }
+      else {
+        system->output->outputString(system->output, u"Mode must be less than max mode");
+      }
+    }
+    else {
+      system->output->outputString(system->output, u"Invalid Parameter");
+    }
   }
   else {
     status = system->output->outputString(system->output, u"Unknown Command");

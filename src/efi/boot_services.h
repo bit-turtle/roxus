@@ -53,7 +53,7 @@ struct efi_boot_services {
   efi_status_t (*exitBootServices)(efi_handle_t*, efi_uint_t);
   // Misc
   void* getNextMonotonicCount;
-  void* stall;
+  efi_status_t (*stall)(efi_uint_t);
   efi_status_t (*setWatchdogTimer)(efi_uint_t, uint64_t, efi_uint_t, efi_char_t*);
   // DriverSupport
   void* connectController;
