@@ -8,3 +8,8 @@ void memcpy(void* dest, const void* src, size_t count) {
   while (count-- > 0)
     destptr[count] = srcptr[count];
 }
+
+// Donpedro13 on github (credit)
+size_t __chkstk (size_t stackSpaceSize) {
+  return stackSpaceSize + 0x10;
+}

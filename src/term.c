@@ -10,7 +10,7 @@
 #include "string.h"
 #include "bsod.h"
 
-efi_status_t term(struct efi_system_table* system, struct efi_graphics_output_protocol* gop) {
+efi_status_t term(struct efi_system_table* system, struct efi_graphics_output_protocol* gop, struct efi_file_protocol* root) {
   efi_status_t status;
 
   bool running = true;
@@ -20,14 +20,14 @@ efi_status_t term(struct efi_system_table* system, struct efi_graphics_output_pr
     if (status != EFI_SUCCESS) return status;
     status = input(system, buffer, 256);
     if (status != EFI_SUCCESS) return status;
-    status = command(system, gop, buffer, &running);
+    status = command(system, gop, root, buffer, &running);
     if (status != EFI_SUCCESS) return status;
   }
 
   return EFI_SUCCESS;
 }
 
-efi_status_t command(struct efi_system_table* system, struct efi_graphics_output_protocol* gop, efi_char_t* command, bool* running) {
+efi_status_t command(struct efi_system_table* system, struct efi_graphics_output_protocol* gop, struct efi_file_protocol* root, efi_char_t* command, bool* running) {
   efi_status_t status;
 
   efi_uint_t argc = 1;
@@ -87,6 +87,44 @@ efi_status_t command(struct efi_system_table* system, struct efi_graphics_output
   }
   else if (streq(argv[0], u"bsod")) {
     bsod(system, EFI_SUCCESS);
+  }
+  // File
+  else if (streq(argv[0], u"cat")) for (efi_uint_t i = 1; i < argc; i++) {
+    struct efi_file_protocol* file;
+    status = root->open(root, &file, argv[i], EFI_FILE_MODE_READ, 0);
+    if (status != EFI_SUCCESS) {
+      system->output->outputString(system->output, u"Failed to open file: ");
+      system->output->outputString(system->output, argv[i]);
+      system->output->outputString(system->output, u"\n\r");
+    }
+    else {
+      uint8_t buffer[256];
+      efi_uint_t size = 256;
+      status = file->read(file, &size, &buffer);
+      if (status != EFI_SUCCESS) {
+        system->output->outputString(system->output, u"Failed to read file: ");
+        system->output->outputString(system->output, argv[i]);
+        system->output->outputString(system->output, u"\n\r");
+      }
+      else {
+        system->output->outputString(system->output, u"Read File: ");
+        system->output->outputString(system->output, argv[i]);
+        system->output->outputString(system->output, u"\n\rFile Size (bytes): ");
+        efi_char_t num[4];
+        system->output->outputString(system->output, itoa(size, num, 10));
+        system->output->outputString(system->output, u"\n\rFile Data:\n\r");
+        for (efi_uint_t c = 0; c < size; c++) {
+          efi_char_t ch[2];
+          ch[0] = buffer[c];
+          ch[1] = u'\0';
+          system->output->outputString(system->output, ch);
+          // Convert to CRLF
+          if (ch[0] == u'\n') system->output->outputString(system->output, u"\r");
+
+        }
+        system->output->outputString(system->output, u"\n\r---------[END OF FILE]---------\n\r");
+      }
+    }
   }
   else if (streq(argv[0], u"time")) {
     struct efi_time time;

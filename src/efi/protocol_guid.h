@@ -69,9 +69,56 @@ struct efi_graphics_output_protocol {
   struct efi_graphics_output_protocol_mode* mode;
 };
 
+// Simple FS
+// Modes
+#define EFI_FILE_MODE_READ       0x0000000000000001
+#define EFI_FILE_MODE_WRITE      0x0000000000000002
+#define EFI_FILE_MODE_CREATE     0x8000000000000000
+// Attributes
+#define EFI_FILE_READ_ONLY       0x0000000000000001
+#define EFI_FILE_HIDDEN          0x0000000000000002
+#define EFI_FILE_SYSTEM          0x0000000000000004
+#define EFI_FILE_RESERVED        0x0000000000000008
+#define EFI_FILE_DIRECTORY       0x0000000000000010
+#define EFI_FILE_ARCHIVE         0x0000000000000020
+#define EFI_FILE_VALID_ATTR      0x0000000000000037
+// Structures
+struct efi_file_io_token {
+  efi_event event;
+  efi_status_t status;
+  efi_uint_t bufferSize;
+  void* buffer;
+};
+struct efi_file_protocol {
+  uint64_t revision;
+  efi_status_t (*open)(struct efi_file_protocol*, struct efi_file_protocol**, efi_char_t*, uint64_t, uint64_t);
+  efi_status_t (*close)(struct efi_file_protocol*);
+  efi_status_t (*remove)(struct efi_file_protocol*);
+  efi_status_t (*read)(struct efi_file_protocol*, efi_uint_t*, void*);
+  efi_status_t (*write)(struct efi_file_protocol*, efi_uint_t*, void*);
+  efi_status_t (*getPosition)(struct efi_file_protocol*, uint64_t*);
+  efi_status_t (*setPosition)(struct efi_file_protocol*, uint64_t);
+  efi_status_t (*getInfo)(struct efi_file_protocol*, struct efi_guid*, efi_uint_t*, void*);
+  efi_status_t (*setInfo)(struct efi_file_protocol*, struct efi_guid*, efi_uint_t, void*);
+  efi_status_t (*flush)(struct efi_file_protocol*);
+  // Revision 2
+  efi_status_t (*openEx)(struct efi_file_protocol*, struct efi_file_protocol**, efi_char_t*, uint64_t, uint64_t, struct efi_file_io_token*);
+  efi_status_t (*readEx)(struct efi_file_protocol*, struct efi_file_io_token*);
+  efi_status_t (*writeEx)(struct efi_file_protocol*, struct efi_file_io_token*);
+  efi_status_t (*flushEx)(struct efi_file_protocol*, struct efi_file_io_token*);
+};
+struct efi_simple_file_system_protocol {
+  uint64_t revision;
+  efi_status_t (*openVolume)(struct efi_simple_file_system_protocol*, struct efi_file_protocol**);
+};
+
 // GUID List
 #define EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID \
  {0x9042a9de,0x23dc,0x4a38,\
   {0x96,0xfb,0x7a,0xde,0xd0,0x80,0x51,0x6a}}
+
+#define EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID \
+ {0x0964e5b22,0x6459,0x11d2,\
+  {0x8e,0x39,0x00,0xa0,0xc9,0x69,0x72,0x3b}}
 
 #endif

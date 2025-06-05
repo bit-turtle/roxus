@@ -6,7 +6,11 @@
 typedef uint64_t efi_uint_t;
 typedef uint16_t efi_char_t;
 
+// Return
 typedef uint64_t efi_status_t;
+
+// Event
+typedef void* efi_event;
 
 // Memory
 typedef uint64_t efi_physical_address_t;

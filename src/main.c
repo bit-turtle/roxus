@@ -21,9 +21,11 @@ efi_status_t efi_main(efi_handle_t handle, struct efi_system_table* system) {
   // Locate GOP
   bool efigop = false;
   struct efi_graphics_output_protocol* gop = NULL;
-  struct efi_guid gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
-  status = system->boot_services->locateProtocol(&gop_guid, NULL, &gop);
-  if (status != EFI_SUCCESS) efigop = true;
+  {
+    struct efi_guid gop_guid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+    status = system->boot_services->locateProtocol(&gop_guid, NULL, &gop);
+    if (status != EFI_SUCCESS) efigop = true;
+  }
 
   // Find Best Text Mode
   {
@@ -51,7 +53,7 @@ efi_status_t efi_main(efi_handle_t handle, struct efi_system_table* system) {
     if (status == EFI_NOT_STARTED) {
       // default to mode zero
       status = gop->setMode(gop, 0);
-      if (status != EFI_SUCCESS) bsod(system, status);
+      if (status != EFI_SUCCESS) efigop = true;
     }
   }
 
@@ -63,14 +65,32 @@ efi_status_t efi_main(efi_handle_t handle, struct efi_system_table* system) {
   status = system->output->outputString(system->output, u"Welcome to Roxus!\n\r");
   if (status != EFI_SUCCESS) bsod(system, status);
 
+  // Load Filesystem
+  bool fserror = true;
+  struct efi_simple_file_system_protocol* fs = NULL;
+  struct efi_file_protocol* root = NULL;
+  {
+    struct efi_guid simple_fs_guid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
+    status = system->boot_services->locateProtocol(&simple_fs_guid, NULL, &fs);
+    if (status == EFI_SUCCESS) {
+      status = fs->openVolume(fs, &root);
+      if (status == EFI_SUCCESS)
+        fserror = false;
+    }
+  }
+
   // Warnings
-  if (watchdog || efigop) {
+  if (watchdog || efigop || fserror) {
     if (watchdog) {
       status = system->output->outputString(system->output, u"Warning: System may Restart Unexpectedly [Watchdog Error]\n\r");
       if (status != EFI_SUCCESS) bsod(system, status);
     }
     if (efigop) {
       status = system->output->outputString(system->output, u"Info: Graphics Output Unavailable [GOP Error]\n\r");
+      if (status != EFI_SUCCESS) bsod(system, status);
+    }
+    if (fserror) {
+      status = system->output->outputString(system->output, u"Error: Failed to open Filesystem Volume\n\r");
       if (status != EFI_SUCCESS) bsod(system, status);
     }
   }
@@ -86,7 +106,7 @@ efi_status_t efi_main(efi_handle_t handle, struct efi_system_table* system) {
   if (status != EFI_SUCCESS) bsod(system, status);
 
   // Terminal
-  status = term(system, gop);
+  status = term(system, gop, root);
   if (status != EFI_SUCCESS) bsod(system, status);
 
   bsod(system, ROXUS_END);
