@@ -1,5 +1,5 @@
 #include "efi/system_table.h"
-#include "efi/protocol_guid.h"
+#include "efi/protocols.h"
 #include "efi/types.h"
 
 #include <stdbool.h>

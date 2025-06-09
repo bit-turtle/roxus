@@ -1,7 +1,6 @@
 #include <stdint.h>
 
 #include "table_header.h"
-#include "handle.h"
 
 #include "text_input.h"
 #include "text_output.h"

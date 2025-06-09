@@ -91,7 +91,7 @@ efi_status_t command(struct efi_system_table* system, struct efi_graphics_output
   // File
   else if (streq(argv[0], u"cat")) for (efi_uint_t i = 1; i < argc; i++) {
     struct efi_file_protocol* file;
-    status = root->open(root, &file, argv[i], EFI_FILE_MODE_READ, 0);
+    status = root->open(root, &file, argv[i], EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
     if (status != EFI_SUCCESS) {
       system->output->outputString(system->output, u"Failed to open file: ");
       system->output->outputString(system->output, argv[i]);

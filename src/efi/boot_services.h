@@ -3,8 +3,6 @@
 #include "table_header.h"
 
 #include "types.h"
-#include "handle.h"
-#include "protocol_guid.h"
 
 #ifndef EFI_BOOT_SERVICES
 #define EFI_BOOT_SERVICES
@@ -16,6 +14,13 @@ struct efi_memory_descriptor {
   uint64_t numberOfPages;
   uint64_t attribute;
 };
+
+#define EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL   0x00000001
+#define EFI_OPEN_PROTOCOL_GET_PROTOCOL         0x00000002
+#define EFI_OPEN_PROTOCOL_TEST_PROTOCOL        0x00000004
+#define EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER  0x00000008
+#define EFI_OPEN_PROTOCOL_BY_DRIVER            0x00000010
+#define EFI_OPEN_PROTOCOL_EXCLUSIVE            0x00000020
 
 struct efi_boot_services {
   struct efi_table_header header;
@@ -39,7 +44,7 @@ struct efi_boot_services {
   efi_status_t (*installProtocolInterface)(efi_handle_t, struct efi_guid*, enum efi_interface_type, void*);
   void* reinstallProtocolInterface;
   void* uninstallProtocolInterface;
-  void* handleProtocol;
+  efi_status_t (*handleProtocol)(efi_handle_t, struct efi_guid*, void**);
   void* reserved;
   void* registerProtocolNotify;
   void* locateHandle;
@@ -59,7 +64,7 @@ struct efi_boot_services {
   void* connectController;
   void* disconnectController;
   // Protocol
-  void* openProtocol;
+  efi_status_t (*openProtocol)(efi_handle_t, struct efi_guid*, void**, efi_handle_t, efi_handle_t, uint32_t);
   void* closeProtocol;
   void* openProtocolInformation;
   // Library

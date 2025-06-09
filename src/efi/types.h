@@ -3,6 +3,22 @@
 #ifndef EFI_TYPES
 #define EFI_TYPES
 
+// Handle
+typedef void* efi_handle_t;
+
+// GUID
+struct efi_guid {
+  uint32_t data1;
+  uint16_t data2;
+  uint16_t data3;
+  uint8_t data4[8];
+};
+
+enum efi_interface_type {
+  EFI_NATIVE_INTERFACE
+};
+
+// Data
 typedef uint64_t efi_uint_t;
 typedef uint16_t efi_char_t;
 
@@ -15,6 +31,25 @@ typedef void* efi_event;
 // Memory
 typedef uint64_t efi_physical_address_t;
 typedef uint64_t efi_virtual_address_t;
+enum efi_memory_type {
+  EFI_RESERVED_MEMORY_TYPE,
+  EFI_LOADER_CODE,
+  EFI_LOADER_DATA,
+  EFI_BOOT_SERVICES_CODE,
+  EFI_BOOT_SERVICES_DATA,
+  EFI_RUNTIME_SERVICES_CODE,
+  EFI_RUNTIME_SERVICES_DATA,
+  EFI_CONVENTIONAL_MEMORY,
+  EFI_UNUSABLE_MEMORY,
+  EFI_ACPI_RECLAIM_MEMORY,
+  EFI_ACPI_MEMORY_NVS,
+  EFI_MEMORY_MAPPED_IO,
+  EFI_MEMORY_MAPPED_IO_PORT_SPACE,
+  EFI_PAL_CODE,
+  EFI_PERSISTENT_MEMORY,
+  EFI_UNACCEPTED_MEMORY_TYPE,
+  EFI_MAX_MEMORY_TYPE
+};
 
 // Text Attributes
 #define EFI_FOREGROUND 0x0f
