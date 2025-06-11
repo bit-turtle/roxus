@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install Tup
+    - name: Install Build Tools
       run: sudo apt-get install tup clang lld
     - name: Build Roxus
-      run: tup
+      run: tup init && tup
