@@ -10,11 +10,15 @@
 #include "string.h"
 #include "bsod.h"
 #include "roxus.h"
+#include "image.h"
+
+// Temp Storage
+uint8_t scratch[256*256*256];
 
 efi_status_t term() {
   efi_status_t status;
 
-  // Open Current Directory
+  // Open Filesystem
   struct efi_file_protocol* dir = NULL;
   status = filesystem->openVolume(filesystem, &dir);
   if (status != EFI_SUCCESS) print(u"Failed to open filesystem!");
@@ -29,6 +33,17 @@ efi_status_t term() {
   }
 
   return EFI_SUCCESS;
+}
+
+efi_status_t run(struct efi_file_protocol* file, struct efi_file_protocol** dir) {
+  efi_char_t** buffer = &scratch;
+  for (efi_char_t* c = *buffer; c != u'\0'; c++)
+    if (*c == u"\n") {
+      *c = u'\0';
+      bool running = true;
+      command(*buffer, dir, &running);
+      if (!running) break;
+    }
 }
 
 efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* running) {
@@ -107,9 +122,62 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
     }
     else print(u"Expected directory name");
   }
-  else if (streq(argv[0], u"ls")) {struct efi_file_protocol* directory;
-    status = (*dir)->open(*dir, &directory, )
-    struct efi_file_info info;
+  else if (streq(argv[0], u"ls")) {
+    struct efi_file_protocol* directory;
+    status = (*dir)->open(*dir, &directory, u".", EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+    if (status == EFI_SUCCESS) {
+      while (true) {
+        struct efi_file_info info;
+        efi_uint_t size = sizeof(info);
+        status = directory->read(directory, &size, &info);
+        if (size == 0) break;
+        print(info.filename);
+        print(u"\n\r");
+      }
+    }
+  }
+  else if (streq(argv[0], u"run")) {
+    struct efi_file_protocol* file;
+    status = (*dir)->open(*dir, &file, argv[1], EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+    if (status != EFI_SUCCESS) {
+      print(u"Failed to open file: ");
+      print(argv[1]);
+      print(u"\n\r");
+    }
+    else {
+      status = run(file, dir);
+      if (status != EFI_SUCCESS) {
+        print(u"Error in script: ");
+        print(argv[1]);
+        print(u"\n\r");
+      }
+      else {
+        print(u"Done!");
+      }
+    }
+  }
+  else if (streq(argv[0], u"ri")) {
+    struct efi_file_protocol* file;
+    status = (*dir)->open(*dir, &file, argv[1], EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+    if (status != EFI_SUCCESS) {
+      print(u"Failed to open file: ");
+      print(argv[1]);
+      print(u"\n\r");
+    }
+    else {
+      struct efi_graphics_output_blt_pixel** buffer = &scratch;
+      efi_uint_t size = 256*256*256;
+      uint32_t width, height;
+      status = load_image(file, *buffer, &size, &width, &height);
+      if (status != EFI_SUCCESS) {
+        print(u"Failed to read image: ");
+        print(argv[1]);
+        print(u"\n\r");
+      }
+      else {
+        graphics_output->blt(graphics_output, *buffer, EFI_BLT_BUFFER_TO_VIDEO, 0, 0, 0, 0, width, height, 0);
+      }
+    }
   }
   else if (streq(argv[0], u"cat")) for (efi_uint_t i = 1; i < argc; i++) {
     struct efi_file_protocol* file;
