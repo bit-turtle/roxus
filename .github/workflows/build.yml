@@ -17,3 +17,8 @@ jobs:
       run: sudo apt-get install tup clang lld
     - name: Build Roxus
       run: tup init && tup
+    - name: Upload Roxus
+      uses: actions/upload-artifact@v4
+      with:
+        name: Roxus Build
+        path: ./root/
