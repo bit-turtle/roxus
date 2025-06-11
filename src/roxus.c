@@ -7,6 +7,8 @@
 // System
 efi_handle_t system_handle;
 struct efi_system_table* system_table;
+struct efi_boot_services* boot_services;
+struct efi_runtime_services* runtime_services;
 struct efi_simple_text_output_protocol* text_output;
 struct efi_simple_text_input_protocol* text_input;
 struct efi_graphics_output_protocol* graphics_output;
@@ -17,6 +19,9 @@ struct efi_simple_file_system_protocol* filesystem;
 // Utility
 efi_status_t print(efi_char_t* string) {
   return system_table->output->outputString(system_table->output, string);
+}
+efi_status_t clear_screen() {
+  return system_table->output->clearScreen(system_table->output);
 }
 
 // Setup
@@ -83,6 +88,8 @@ bool fs_setup() {
 void roxus_setup(efi_handle_t handle, struct efi_system_table *system) {
   system_handle = handle;
   system_table = system;
+  boot_services = system_table->boot_services;
+  runtime_services = system_table->runtime_services;
   // Setup
   // Disable Watchdog Timer
   bool watchdogerror = watchdog_setup();

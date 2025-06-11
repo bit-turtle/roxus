@@ -19,7 +19,11 @@ enum efi_interface_type {
 };
 
 // Data
+#ifdef ROXUS_32
+typedef uint32_t
+#else
 typedef uint64_t efi_uint_t;
+#endif
 typedef uint16_t efi_char_t;
 
 // Return

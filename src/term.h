@@ -4,5 +4,5 @@
 
 #include <stdbool.h>
 
-efi_status_t term(struct efi_system_table* system, struct efi_graphics_output_protocol* gop, struct efi_file_protocol* root);
-efi_status_t command(struct efi_system_table* system, struct efi_graphics_output_protocol* gop, struct efi_file_protocol* root, efi_char_t* command, bool* running);
+efi_status_t term();
+efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* running);

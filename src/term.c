@@ -9,25 +9,29 @@
 
 #include "string.h"
 #include "bsod.h"
+#include "roxus.h"
 
-efi_status_t term(struct efi_system_table* system, struct efi_graphics_output_protocol* gop, struct efi_file_protocol* root) {
+efi_status_t term() {
   efi_status_t status;
+
+  // Open Current Directory
+  struct efi_file_protocol* dir = NULL;
+  status = filesystem->openVolume(filesystem, &dir);
+  if (status != EFI_SUCCESS) print(u"Failed to open filesystem!");
 
   bool running = true;
   efi_char_t buffer[256];
   while (running) {
-    status = system->output->outputString(system->output, u"> ");
-    if (status != EFI_SUCCESS) return status;
-    status = input(system, buffer, 256);
-    if (status != EFI_SUCCESS) return status;
-    status = command(system, gop, root, buffer, &running);
-    if (status != EFI_SUCCESS) return status;
+    print(u"\n\r> ");
+    input(buffer, 256);
+    status = command(buffer, &dir, &running);
+    if (status != EFI_SUCCESS) print(u"Error!");
   }
 
   return EFI_SUCCESS;
 }
 
-efi_status_t command(struct efi_system_table* system, struct efi_graphics_output_protocol* gop, struct efi_file_protocol* root, efi_char_t* command, bool* running) {
+efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* running) {
   efi_status_t status;
 
   efi_uint_t argc = 1;
@@ -49,10 +53,8 @@ efi_status_t command(struct efi_system_table* system, struct efi_graphics_output
   if (streq(argv[0], u"exit")) {
     *running = false;
   }
-  else if (streq(argv[0], u"clear")) {
-    status = system->output->clearScreen(system->output);
-    if (status != EFI_SUCCESS) return status;
-  }
+  else if (streq(argv[0], u"clear"))
+    clear_screen();
   else if (streq(argv[0], u"reset")) {
     bool valid = true;
     enum efi_reset_type_t reset;
@@ -69,71 +71,93 @@ efi_status_t command(struct efi_system_table* system, struct efi_graphics_output
     }
     else valid = false;
     if (valid)
-      system->runtime_services->resetSystem(reset, EFI_SUCCESS, 0, NULL);
+      system_table->runtime_services->resetSystem(reset, EFI_SUCCESS, 0, NULL);
     else {
-      status = system->output->outputString(system->output, u"Invalid Reset Type\n\rValid Types: shutdown, warm, cold, platform-specific");
+      status = system_table->output->outputString(system_table->output, u"Invalid Reset Type\n\rValid Types: shutdown, warm, cold, platform-specific");
       if (status != EFI_SUCCESS) return status;
     }
   }
   else if (streq(argv[0], u"echo")) {
     for (int i = 1; i < argc; i++) {
       if (i != 1) {
-        status = system->output->outputString(system->output, u" ");
+        status = system_table->output->outputString(system_table->output, u" ");
         if (status != EFI_SUCCESS) return status;
       }
-      status = output(system, argv[i]);
+      status = output(system_table, argv[i]);
       if (status != EFI_SUCCESS) return status;
     }
   }
   else if (streq(argv[0], u"bsod")) {
-    bsod(system, EFI_SUCCESS);
+    bsod(system_table, EFI_SUCCESS);
   }
   // File
+  else if (streq(argv[0], u"cd")) {
+    if (argc > 1) {
+      struct efi_file_protocol* newdir;
+      status = (*dir)->open(*dir, &newdir, argv[1], EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+      if (status != EFI_SUCCESS) {
+        print(u"Failed to open directory");
+      }
+      else {
+        status = (*dir)->close(*dir);
+        if (status != EFI_SUCCESS) print(u"Failed to close original dir");
+        *dir = newdir;
+        print(argv[1]);
+      }
+    }
+    else print(u"Expected directory name");
+  }
+  else if (streq(argv[0], u"ls")) {struct efi_file_protocol* directory;
+    status = (*dir)->open(*dir, &directory, )
+    struct efi_file_info info;
+  }
   else if (streq(argv[0], u"cat")) for (efi_uint_t i = 1; i < argc; i++) {
     struct efi_file_protocol* file;
-    status = root->open(root, &file, argv[i], EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+    status = (*dir)->open(*dir, &file, argv[i], EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
     if (status != EFI_SUCCESS) {
-      system->output->outputString(system->output, u"Failed to open file: ");
-      system->output->outputString(system->output, argv[i]);
-      system->output->outputString(system->output, u"\n\r");
+      print(u"Failed to open file: ");
+      print(argv[i]);
+      print(u"\n\r");
     }
     else {
       uint8_t buffer[256];
       efi_uint_t size = 256;
       status = file->read(file, &size, &buffer);
       if (status != EFI_SUCCESS) {
-        system->output->outputString(system->output, u"Failed to read file: ");
-        system->output->outputString(system->output, argv[i]);
-        system->output->outputString(system->output, u"\n\r");
+        print(u"Failed to read file: ");
+        print(argv[i]);
+        print(u"\n\r");
       }
       else {
-        system->output->outputString(system->output, u"Read File: ");
-        system->output->outputString(system->output, argv[i]);
-        system->output->outputString(system->output, u"\n\rFile Size (bytes): ");
+        print(u"Read File: ");
+        print(argv[i]);
+        print(u"\n\rFile Size (bytes): ");
         efi_char_t num[4];
-        system->output->outputString(system->output, itoa(size, num, 10));
-        system->output->outputString(system->output, u"\n\rFile Data:\n\r");
+        print(itoa(size, num, 10));
+        print(u"\n\rFile Data:\n\r");
         for (efi_uint_t c = 0; c < size; c++) {
           efi_char_t ch[2];
           ch[0] = buffer[c];
           ch[1] = u'\0';
-          system->output->outputString(system->output, ch);
+          print(ch);
           // Convert to CRLF
-          if (ch[0] == u'\n') system->output->outputString(system->output, u"\r");
+          if (ch[0] == u'\n') print(u"\r");
 
         }
-        system->output->outputString(system->output, u"\n\r---------[END OF FILE]---------\n\r");
+        print(u"\n\r---------[END OF FILE]---------\n\r");
+        status = file->close(file);
+        if (status != EFI_SUCCESS) print(u"Failed to close file");
       }
     }
   }
   else if (streq(argv[0], u"time")) {
     struct efi_time time;
     struct efi_time_capabilities capabilities;
-    status = system->runtime_services->getTime(&time, &capabilities);
+    status = system_table->runtime_services->getTime(&time, &capabilities);
     if (status != EFI_SUCCESS) return status;
     for (int i = 1; i < argc; i++) {
       if (i != 1) {
-        status = system->output->outputString(system->output, u":");
+        status = system_table->output->outputString(system_table->output, u":");
         if (status != EFI_SUCCESS) return status;
       }
       efi_char_t str[16];
@@ -154,45 +178,45 @@ efi_status_t command(struct efi_system_table* system, struct efi_graphics_output
       else if (streq(argv[i], u"setstozero")) value = capabilities.setsToZero;
       else valid = false;
       if (valid)
-        status = system->output->outputString(system->output, itoa(value, str, 10));
+        status = system_table->output->outputString(system_table->output, itoa(value, str, 10));
       else
-        status = system->output->outputString(system->output, u"?");
+        status = system_table->output->outputString(system_table->output, u"?");
       if (status != EFI_SUCCESS) return status;
     }
   }
-  // GOP Test Commands
+  // graphics_output Test Commands
   else if (streq(argv[0], u"gopinfo")) {
     efi_char_t buf[128];
-    system->output->outputString(system->output, u"Mode: ");
-    system->output->outputString(system->output, itoa(gop->mode->mode, buf, 10));
-    system->output->outputString(system->output, u"/");
-    system->output->outputString(system->output, itoa(gop->mode->maxMode, buf, 10));
-    system->output->outputString(system->output, u"\n\rResolution: ");
-    system->output->outputString(system->output, itoa(gop->mode->info->horizontalResolution, buf, 10));
-    system->output->outputString(system->output, u":");
-    system->output->outputString(system->output, itoa(gop->mode->info->verticalResolution, buf, 10));
-    system->output->outputString(system->output, u"\n\rFramebuffer Size: ");
-    system->output->outputString(system->output, itoa(gop->mode->framebufferSize, buf, 10));
+    system_table->output->outputString(system_table->output, u"Mode: ");
+    system_table->output->outputString(system_table->output, itoa(graphics_output->mode->mode, buf, 10));
+    system_table->output->outputString(system_table->output, u"/");
+    system_table->output->outputString(system_table->output, itoa(graphics_output->mode->maxMode, buf, 10));
+    system_table->output->outputString(system_table->output, u"\n\rResolution: ");
+    system_table->output->outputString(system_table->output, itoa(graphics_output->mode->info->horizontalResolution, buf, 10));
+    system_table->output->outputString(system_table->output, u":");
+    system_table->output->outputString(system_table->output, itoa(graphics_output->mode->info->verticalResolution, buf, 10));
+    system_table->output->outputString(system_table->output, u"\n\rFramebuffer Size: ");
+    system_table->output->outputString(system_table->output, itoa(graphics_output->mode->framebufferSize, buf, 10));
   }
   else if (streq(argv[0], u"gopmode")) {
     if (argc > 1) {
       uint32_t mode = getInt(argv[1]);
-      if (mode < gop->mode->maxMode) {
-        // Set GOP Mode
-        status = gop->setMode(gop, mode);
+      if (mode < graphics_output->mode->maxMode) {
+        // Set graphics_output Mode
+        status = graphics_output->setMode(graphics_output, mode);
         // Failure message
         if (status != EFI_SUCCESS)
-          system->output->outputString(system->output, u"Failed to set GOP Mode!");
+          system_table->output->outputString(system_table->output, u"Failed to set GOP Mode!");
         // Success Message
         else
-          system->output->outputString(system->output, u"GOP Mode Set!");
+          system_table->output->outputString(system_table->output, u"GOP Mode Set!");
       }
       else {
-        system->output->outputString(system->output, u"Mode must be less than max mode");
+        system_table->output->outputString(system_table->output, u"Mode must be less than max mode");
       }
     }
     else {
-      system->output->outputString(system->output, u"Invalid Parameter");
+      system_table->output->outputString(system_table->output, u"Invalid Parameter");
     }
   }
   else if (streq(argv[0], u"goptest")) {
@@ -200,40 +224,40 @@ efi_status_t command(struct efi_system_table* system, struct efi_graphics_output
     pixel.red = getInt(argv[1]);
     pixel.green = getInt(argv[2]);
     pixel.blue = getInt(argv[3]);
-    gop->blt(gop, &pixel, EFI_BLT_VIDEO_FILL, 0, 0, 0, 0, 500, 500, 0);
+    graphics_output->blt(graphics_output, &pixel, EFI_BLT_VIDEO_FILL, 0, 0, 0, 0, 500, 500, 0);
   }
   else if (streq(argv[0], u"textinfo")) {
     efi_char_t buf[128];
-    system->output->outputString(system->output, u"Mode: ");
-    system->output->outputString(system->output, itoa(system->output->mode->mode, buf, 10));
-    system->output->outputString(system->output, u"/");
-    system->output->outputString(system->output, itoa(system->output->mode->maxMode, buf, 10));
-    system->output->outputString(system->output, u"\n\rAttribute: ");
-    system->output->outputString(system->output, itoa(system->output->mode->attribute, buf, 10));
+    system_table->output->outputString(system_table->output, u"Mode: ");
+    system_table->output->outputString(system_table->output, itoa(system_table->output->mode->mode, buf, 10));
+    system_table->output->outputString(system_table->output, u"/");
+    system_table->output->outputString(system_table->output, itoa(system_table->output->mode->maxMode, buf, 10));
+    system_table->output->outputString(system_table->output, u"\n\rAttribute: ");
+    system_table->output->outputString(system_table->output, itoa(system_table->output->mode->attribute, buf, 10));
   }
   else if (streq(argv[0], u"textmode")) {
     if (argc > 1) {
       uint32_t mode = getInt(argv[1]);
-      if (mode < system->output->mode->maxMode) {
+      if (mode < system_table->output->mode->maxMode) {
         // Set Text Mode
-        status = system->output->setMode(system->output, mode);
+        status = system_table->output->setMode(system_table->output, mode);
         // Failure Message
         if (status != EFI_SUCCESS)
-          system->output->outputString(system->output, u"Failed to set Text Mode!");
+          system_table->output->outputString(system_table->output, u"Failed to set Text Mode!");
         // Success Message
         else
-          system->output->outputString(system->output, u"Text Mode Set!");
+          system_table->output->outputString(system_table->output, u"Text Mode Set!");
       }
       else {
-        system->output->outputString(system->output, u"Mode must be less than max mode");
+        system_table->output->outputString(system_table->output, u"Mode must be less than max mode");
       }
     }
     else {
-      system->output->outputString(system->output, u"Invalid Parameter");
+      system_table->output->outputString(system_table->output, u"Invalid Parameter");
     }
   }
   else {
-    status = system->output->outputString(system->output, u"Unknown Command");
+    status = system_table->output->outputString(system_table->output, u"Unknown Command");
     if (status != EFI_SUCCESS) return status;
   }
 

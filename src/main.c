@@ -23,7 +23,7 @@ efi_status_t efi_main(efi_handle_t handle, struct efi_system_table* system) {
   // Terminal
   struct efi_file_protocol* root;
   filesystem->openVolume(filesystem, &root);
-  status = term(system, graphics_output, root);
+  status = term();
   if (status != EFI_SUCCESS) bsod(system, status);
 
   bsod(system, ROXUS_END);

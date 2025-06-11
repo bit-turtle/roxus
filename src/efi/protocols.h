@@ -100,6 +100,16 @@ struct efi_file_io_token {
   efi_uint_t bufferSize;
   void* buffer;
 };
+struct efi_file_info {
+  uint64_t size;
+  uint64_t fileSize;
+  uint64_t physicalSize;
+  struct efi_time createTime;
+  struct efi_time lastAccessTime;
+  struct efi_time modificationTime;
+  uint64_t attribute;
+  efi_char_t filename[256];
+};
 struct efi_file_protocol {
   uint64_t revision;
   efi_status_t (*open)(struct efi_file_protocol*, struct efi_file_protocol**, efi_char_t*, uint64_t, uint64_t);
@@ -133,6 +143,9 @@ struct efi_simple_file_system_protocol {
 
 #define EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID \
  {0x0964e5b22,0x6459,0x11d2,\
+  {0x8e,0x39,0x00,0xa0,0xc9,0x69,0x72,0x3b}}
+#define EFI_FILE_INFO_ID \
+ {0x09576e92,0x6d3f,0x11d2,\
   {0x8e,0x39,0x00,0xa0,0xc9,0x69,0x72,0x3b}}
 
 #endif

@@ -1,5 +1,6 @@
-# Build and Write
+# Build
 tup
+# Write
 sudo mkdir /mnt/roxus
 sudo mount $1 /mnt/roxus
 sudo cp -r root/* /mnt/roxus

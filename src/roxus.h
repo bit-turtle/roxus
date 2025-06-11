@@ -9,6 +9,8 @@
 void roxus_setup(efi_handle_t handle, struct efi_system_table* system);
 
 extern struct efi_system_table* system_table;
+extern struct efi_boot_services* boot_services;
+extern struct efi_runtime_services* runtime_services;
 extern struct efi_simple_text_output_protocol* text_output;
 extern struct efi_simple_text_input_protocol* text_input;
 extern struct efi_graphics_output_protocol* graphics_output;
@@ -17,4 +19,5 @@ extern struct efi_simple_file_system_protocol* filesystem;
 
 // Utility
 
-struct efi_simple_file_system_protocol* root_fs();
+efi_status_t print(efi_char_t* string);
+efi_status_t clear_screen();

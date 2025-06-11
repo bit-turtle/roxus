@@ -1,6 +1,7 @@
 // Implementation of some libc functions
 #include <stdint.h>
 #include <stddef.h>
+#include "roxus.h"
 
 void memcpy(void* dest, const void* src, size_t count) {
   uint8_t* destptr = (uint8_t*)dest;
@@ -9,7 +10,7 @@ void memcpy(void* dest, const void* src, size_t count) {
     destptr[count] = srcptr[count];
 }
 
-// Donpedro13 on github (credit)
-size_t __chkstk (size_t stackSpaceSize) {
-  return stackSpaceSize + 0x10;
+void* malloc(size_t size) {
+
+  return NULL;
 }
