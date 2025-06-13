@@ -1,6 +1,7 @@
-// Simple Terminal
+                                                              // Simple Terminal
 
 #include <stddef.h>
+#include "libc.h"
 
 #include "term.h"
 
@@ -11,9 +12,6 @@
 #include "bsod.h"
 #include "roxus.h"
 #include "image.h"
-
-// Temp Storage
-uint8_t scratch[256*256*256];
 
 efi_status_t term() {
   efi_status_t status;
@@ -36,14 +34,35 @@ efi_status_t term() {
 }
 
 efi_status_t run(struct efi_file_protocol* file, struct efi_file_protocol** dir) {
-  efi_char_t** buffer = &scratch;
-  for (efi_char_t* c = *buffer; c != u'\0'; c++)
-    if (*c == u"\n") {
-      *c = u'\0';
-      bool running = true;
-      command(*buffer, dir, &running);
-      if (!running) break;
-    }
+  efi_char_t* buffer = NULL;
+  // Allocate buffer
+  struct efi_guid info_guid = EFI_FILE_INFO_ID;
+  struct efi_file_info info;
+  efi_uint_t info_size = sizeof(info);
+  efi_status_t status = file->getInfo(file, &info_guid, &info_size, &info);
+  if (status != EFI_SUCCESS) return status;
+  buffer = malloc(info.fileSize);
+  if (buffer == NULL)
+    return EFI_BUFFER_TOO_SMALL;
+  // Load File
+  efi_uint_t size = info.fileSize;
+  status = file->read(file, &size, buffer);
+  if (status != EFI_SUCCESS)
+    return status;
+  print(u"Script loaded!");
+  // Run script
+  print(buffer);
+  efi_char_t* start = buffer;
+  efi_char_t* end = buffer;
+  while (*++end != u'\0') {
+    if (*end == u'\n') *end = u'\0';
+    print(start);
+    start = end+1;
+  }
+  // Dealloc script
+  free(buffer);
+
+  return EFI_SUCCESS;
 }
 
 efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* running) {
@@ -152,7 +171,7 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
         print(u"\n\r");
       }
       else {
-        print(u"Done!");
+        print(u"\r\nDone!");
       }
     }
   }
@@ -165,18 +184,34 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
       print(u"\n\r");
     }
     else {
-      struct efi_graphics_output_blt_pixel** buffer = &scratch;
-      efi_uint_t size = 256*256*256;
       uint32_t width, height;
-      status = load_image(file, *buffer, &size, &width, &height);
+      struct efi_graphics_output_blt_pixel* buffer;
+      status = load_image(file, &buffer, &width, &height);
       if (status != EFI_SUCCESS) {
         print(u"Failed to read image: ");
         print(argv[1]);
         print(u"\n\r");
       }
       else {
-        graphics_output->blt(graphics_output, *buffer, EFI_BLT_BUFFER_TO_VIDEO, 0, 0, 0, 0, width, height, 0);
+        if (argc > 2) {
+          uint32_t newwidth = getInt(argv[2]);
+          uint32_t newheight = (argc > 3) ? getInt(argv[3]) : newwidth;
+          struct efi_graphics_output_blt_pixel* newbuffer;
+          print(u"Resizing!");
+          status = resize_image(buffer, width, height, &newbuffer, newwidth, newheight);
+          print(u"Resized");
+          free(buffer);
+          print(u"Freed");
+          if (status == EFI_SUCCESS) {
+            buffer = newbuffer;
+            width = newwidth;
+            height = newheight;
+          }
+          else print(u"Failed to resize image");
+        }
+        graphics_output->blt(graphics_output, buffer, EFI_BLT_BUFFER_TO_VIDEO, 0, 0, 0, 0, width, height, 0);
       }
+      free(buffer);
     }
   }
   else if (streq(argv[0], u"cat")) for (efi_uint_t i = 1; i < argc; i++) {
@@ -188,9 +223,9 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
       print(u"\n\r");
     }
     else {
-      uint8_t buffer[256];
-      efi_uint_t size = 256;
-      status = file->read(file, &size, &buffer);
+      efi_uint_t size = 256*256;
+      uint8_t* buffer = malloc(size);
+      status = file->read(file, &size, buffer);
       if (status != EFI_SUCCESS) {
         print(u"Failed to read file: ");
         print(argv[i]);
@@ -198,7 +233,7 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
       }
       else {
         print(u"Read File: ");
-        print(argv[i]);
+        print(argv[1]);
         print(u"\n\rFile Size (bytes): ");
         efi_char_t num[4];
         print(itoa(size, num, 10));
@@ -216,6 +251,7 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
         status = file->close(file);
         if (status != EFI_SUCCESS) print(u"Failed to close file");
       }
+      free(buffer);
     }
   }
   else if (streq(argv[0], u"time")) {

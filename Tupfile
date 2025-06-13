@@ -1,10 +1,10 @@
 # Default Build Settings
 ARCH := x86_64
 NAME := x64
-CFLAGS += -ffreestanding -mno-red-zone -fno-stack-protector -std=c11 -target $(ARCH)-unknown-windows
+CFLAGS += -ffreestanding -mno-red-zone -std=c11 -target $(ARCH)-unknown-windows
 LFLAGS = -subsystem:efi_application -entry:efi_main
 # Roxus Tupfile
 : foreach src/*.c |> clang $(CFLAGS) -c %f -o %o |> build/%B.o
 : build/*.o |> lld -flavor link -out:build/boot$(NAME).efi %f $(LFLAGS) |> build/boot$(NAME).efi
 : build/boot$(NAME).efi |> mkdir -p root/efi/boot && cp %f root/efi/boot |> root/efi/boot/boot$(NAME).efi
-: foreach roxus/* |> mkdir -p root/efi/roxus && cp -r %f root/efi/roxus/%b |> root/efi/roxus/%b
+: foreach roxus/* |> mkdir -p root/roxus && cp -r %f root/roxus/%b |> root/roxus/%b

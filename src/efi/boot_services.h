@@ -22,17 +22,24 @@ struct efi_memory_descriptor {
 #define EFI_OPEN_PROTOCOL_BY_DRIVER            0x00000010
 #define EFI_OPEN_PROTOCOL_EXCLUSIVE            0x00000020
 
+enum efi_allocate_type {
+  EFI_ALLOCATE_ANY_PAGES,
+  EFI_ALLOCATE_MAX_ADDRESS,
+  EFI_ALLOCATE_ADDRESS,
+  EFI_MAX_ALLOCATE_TYPE
+};
+
 struct efi_boot_services {
   struct efi_table_header header;
   // Task Priority
   efi_uint_t (*raiseTPL)(efi_uint_t);
   void (*restoreTPL)(efi_uint_t);
   // Memory
-  void* allocatePages;
-  void* freePages;
+  efi_status_t (*allocatePages)(enum efi_allocate_type, enum efi_memory_type, efi_uint_t, efi_physical_address_t*);
+  efi_status_t (*freePages)(efi_physical_address_t, efi_uint_t);
   efi_status_t (*getMemoryMap)(efi_uint_t*, struct efi_memory_descriptor*, efi_uint_t*, efi_uint_t*, uint32_t*);
-  void* allocatePool;
-  void* freePool;
+  efi_status_t (*allocatePool)(enum efi_memory_type, efi_uint_t, void**);
+  efi_status_t (*freePool)(void*);
   // Event & Timer
   void* createEvent;
   void* setTimer;

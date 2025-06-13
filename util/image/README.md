@@ -1,2 +1,0 @@
-# util/image
-Image Converter
