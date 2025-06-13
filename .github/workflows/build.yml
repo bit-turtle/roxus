@@ -1,0 +1,24 @@
+name: Roxus CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Build Tools
+      run: sudo apt-get install tup clang lld
+    - name: Build Roxus
+      run: tup init && tup
+    - name: Upload Roxus
+      uses: actions/upload-artifact@v4
+      with:
+        name: Roxus Build
+        path: ./root/
