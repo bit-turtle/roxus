@@ -27,5 +27,5 @@ void* calloc(size_t size) {
 }
 
 void free(void* buffer) {
-  efi_status_t status = boot_services->freePool(buffer);
+  boot_services->freePool(buffer);
 }

@@ -1,4 +1,4 @@
-                                                              // Simple Terminal
+// Simple Terminal
 
 #include <stddef.h>
 #include "libc.h"
@@ -12,6 +12,7 @@
 #include "bsod.h"
 #include "roxus.h"
 #include "image.h"
+#include "nes.h"
 
 efi_status_t term() {
   efi_status_t status;
@@ -173,6 +174,18 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
       else {
         print(u"\r\nDone!");
       }
+    }
+  }
+  else if (streq(argv[0], u"nes")) {
+    struct efi_file_protocol* file;
+    status = (*dir)->open(*dir, &file, argv[1], EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+    if (status != EFI_SUCCESS) {
+      print(u"Failed to open file: ");
+      print(argv[1]);
+      print(u"\n\r");
+    }
+    else {
+      run_nes_rom(file);
     }
   }
   else if (streq(argv[0], u"ri")) {
