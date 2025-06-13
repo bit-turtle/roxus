@@ -98,7 +98,7 @@ efi_status_t run_nes_rom(struct efi_file_protocol* rom) {
 
   // Print mapper id
   efi_char_t buffer[16];
-  print(itoa(mapper, &buffer, 10));
+  print(itoa(mapper, buffer, 10));
 
   // Dealloc and Exit
 exit:
