@@ -21,8 +21,8 @@ void* malloc(size_t size) {
 void* calloc(size_t size) {
   void* buffer = malloc(size);
   if (buffer != NULL)
-    for (uint8_t* byte = buffer; byte < buffer+size; byte++)
-      *byte = 0;
+    for (void* byte = buffer; byte < buffer+size; byte++)
+      *(uint8_t*)byte = 0;
   return buffer;
 }
 
