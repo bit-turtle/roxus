@@ -10,6 +10,12 @@ void memcpy(void* dest, const void* src, size_t count) {
     destptr[count] = srcptr[count];
 }
 
+void* memset(void *ptr, int value, size_t length) {
+  while (length-- > 0)
+    *(uint8_t*)ptr++ = value;
+  return ptr;
+}
+
 void* malloc(size_t size) {
   void* buffer;
   efi_status_t status = boot_services->allocatePool(EFI_LOADER_DATA, (efi_uint_t)size, &buffer);

@@ -20,4 +20,5 @@ extern struct efi_simple_file_system_protocol* filesystem;
 // Utility
 
 efi_status_t print(efi_char_t* string);
+efi_status_t print_ascii(char* string);
 efi_status_t clear_screen();

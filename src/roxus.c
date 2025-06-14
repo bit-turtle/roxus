@@ -20,6 +20,17 @@ struct efi_simple_file_system_protocol* filesystem;
 efi_status_t print(efi_char_t* string) {
   return system_table->output->outputString(system_table->output, string);
 }
+efi_status_t print_ascii(char* string) {
+  efi_status_t status;
+  efi_char_t buffer[2] = u"?\0";
+  while (*string != '\0') {
+    buffer[0] = *string++;
+    status = system_table->output->outputString(system_table->output, buffer);
+    if (status != EFI_SUCCESS)
+      return status;
+  }
+  return EFI_SUCCESS;
+}
 efi_status_t clear_screen() {
   return system_table->output->clearScreen(system_table->output);
 }
