@@ -16,7 +16,7 @@ struct ines_header {
 
 enum console_type : uint8_t {
   NES = 0,
-  VS = 1,
+  VS_UNISYSTEM = 1,
   PLAYCHOICE_10 = 2,
   EXTENDED = 3
 };
@@ -80,7 +80,7 @@ efi_status_t run_nes_rom(struct efi_file_protocol* rom) {
         ines = false;
   }
   // Detect iNES 0.7
-  archaicInes = (!(nes2 || archaicInes || ines)) ? true : false;
+  bool ines07 = (!(nes2 || archaicInes || ines)) ? true : false;
   // Display iNES Format
   if (nes2)
     print(u"Format: NES 2.0\n\r");
@@ -129,7 +129,16 @@ efi_status_t run_nes_rom(struct efi_file_protocol* rom) {
     return EFI_LOAD_ERROR;
   }
   // Determine Console Type
-  enum console_type console_type = archaicInes ? NES : (header.flags[1]&0b11);
+  enum console_type console_type = (archaicInes || ines07) ? NES : (header.flags[1]&0b11);
+  print(u"Console Type: ");
+  if (console_type == NES)
+    print(u"NES\r\n");
+  else if (console_type == VS_UNISYSTEM)
+    print(u"VS Unisystem\r\n");
+  else if (console_type == PLAYCHOICE_10)
+    print(u"PlayChoice-10\r\n");
+  else
+    print(u"Extended\r\n");
   // Read PlayChoice-10 Data
   uint8_t* playchoice_10 = NULL;
   if (console_type == PLAYCHOICE_10) {
@@ -163,14 +172,14 @@ efi_status_t run_nes_rom(struct efi_file_protocol* rom) {
   }
   if (title_size > 0) {
     print(u"Title: ");
-    print_ascii(title);
+    print_ascii(&(title[0]));
   }
 
   // Read Mapper Value
   uint16_t mapper = 0;
   uint8_t submapper = 0;
   mapper |= (header.flags[0]&0xf0)>>4;
-  if (nes2 || ines) mapper |= (header.flags[0]&0xf0)>>0;
+  if (nes2 || ines || ines07) mapper |= (header.flags[0]&0xf0)>>0;
   if (nes2) mapper |= (header.flags[1]&0xf)<<8;
   if (nes2) submapper = (header.flags[1]&0xf0)>>4;
   // Print mapper id
@@ -178,7 +187,35 @@ efi_status_t run_nes_rom(struct efi_file_protocol* rom) {
   print_number(mapper);
   print(u"\n\rSubmapper: ");
   print_number(submapper);
+  print(u"\n\r");
 
+  // Print CHR ROM as string because why not
+  uint8_t c = 0;
+  for (int y = 0; y < 8; y++) {
+    for (int x = 0; x < 8; x++) {
+      uint8_t offset = c*16+y;
+      uint8_t pixel = (chr_rom[offset]>>x)&0b1;
+      pixel |= ((chr_rom[offset+8]>>x)&0b1)<<1;
+      switch (pixel) {
+        case 0:
+          print(u" ");
+          break;
+        case 1:
+          print(u"░");
+          break;
+        case 2:
+          print(u"▒");
+          break;
+        case 3:
+          print(u"▒");
+          break;
+        default:
+          print(u"?");
+      }
+    }
+    print(u"\r\n");
+  }
+  
   // Cleanup
   free(prg_rom);
   free(chr_rom);

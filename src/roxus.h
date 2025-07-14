@@ -15,6 +15,7 @@ extern struct efi_simple_text_output_protocol* text_output;
 extern struct efi_simple_text_input_protocol* text_input;
 extern struct efi_graphics_output_protocol* graphics_output;
 
+extern struct efi_loaded_image_protocol* loaded_image;
 extern struct efi_simple_file_system_protocol* filesystem;
 
 // Utility
