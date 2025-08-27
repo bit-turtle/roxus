@@ -133,10 +133,34 @@ struct efi_simple_file_system_protocol {
   efi_status_t (*openVolume)(struct efi_simple_file_system_protocol*, struct efi_file_protocol**);
 };
 
+// Simple Pointer
+struct efi_simple_pointer_mode {
+	uint64_t resolutionX;
+	uint64_t resolutionY;
+	uint64_t resolutionZ;
+	bool leftButton;
+	bool rightButton;
+};
+struct efi_simple_pointer_state {
+	int32_t movementX;
+	int32_t movementY;
+	int32_t movementZ;
+	bool leftButton;
+	bool rightButton;
+};
+struct efi_simple_pointer_protocol {
+	efi_status_t (*reset)(struct efi_simple_pointer_protocol*, bool);
+	efi_status_t (*getState)(struct efi_simple_pointer_protocol*, struct efi_simple_pointer_state*);
+	efi_event waitForInput;
+	struct efi_simple_pointer_mode* mode;
+
+};
+
 // GUID List
 #define EFI_LOADED_IMAGE_PROTOCOL_GUID \
   {0x5B1B31A1,0x9562,0x11d2,\
     {0x8E,0x3F,0x00,0xA0,0xC9,0x69,0x72,0x3B}}
+
 #define EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID \
  {0x9042a9de,0x23dc,0x4a38,\
   {0x96,0xfb,0x7a,0xde,0xd0,0x80,0x51,0x6a}}
@@ -144,8 +168,13 @@ struct efi_simple_file_system_protocol {
 #define EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID \
  {0x0964e5b22,0x6459,0x11d2,\
   {0x8e,0x39,0x00,0xa0,0xc9,0x69,0x72,0x3b}}
+
 #define EFI_FILE_INFO_ID \
  {0x09576e92,0x6d3f,0x11d2,\
   {0x8e,0x39,0x00,0xa0,0xc9,0x69,0x72,0x3b}}
+
+#define EFI_SIMPLE_POINTER_PROTOCOL_GUID \
+ {0x31878c87,0xb75,0x11d5,\
+  {0x9a,0x4f,0x00,0x90,0x27,0x3f,0xc1,0x4d}}
 
 #endif

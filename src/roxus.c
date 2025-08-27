@@ -12,6 +12,7 @@ struct efi_runtime_services* runtime_services;
 struct efi_simple_text_output_protocol* text_output;
 struct efi_simple_text_input_protocol* text_input;
 struct efi_graphics_output_protocol* graphics_output;
+struct efi_simple_pointer_protocol* mouse_pointer;
 
 struct efi_loaded_image_protocol* loaded_image;
 struct efi_simple_file_system_protocol* filesystem;
@@ -90,7 +91,17 @@ bool fs_setup() {
   if (status != EFI_SUCCESS) return true;
   // Open Simple Filesystem Protocol
   struct efi_guid fs_guid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
-  status = system_table->boot_services->openProtocol(loaded_image->device, &fs_guid, (void**)&filesystem, system_handle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+  status |= system_table->boot_services->openProtocol(loaded_image->device, &fs_guid, (void**)&filesystem, system_handle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+  if (status != EFI_SUCCESS) return true;
+
+  return false;
+}
+
+bool mouse_setup() {
+  efi_status_t status;
+  struct efi_guid pointer_guid = EFI_SIMPLE_POINTER_PROTOCOL_GUID;
+  // Install Simple Pointer Protocol
+  status = system_table->boot_services->locateProtocol(&pointer_guid, NULL, &mouse_pointer);
   if (status != EFI_SUCCESS) return true;
 
   return false;
@@ -110,6 +121,8 @@ void roxus_setup(efi_handle_t handle, struct efi_system_table *system) {
   bool texterror = text_setup();
   // Setup Filesystem
   bool fserror = fs_setup();
+  // Setup Mouse Pointer
+  bool mouseerror = mouse_setup();
 
   // Clear Screen
   text_output->clearScreen(text_output);
@@ -118,7 +131,7 @@ void roxus_setup(efi_handle_t handle, struct efi_system_table *system) {
   print(u"Welcome to Roxus!\n\r");
 
   // Warnings
-  if (watchdogerror || goperror || texterror || fserror) {
+  if (watchdogerror || goperror || texterror || fserror || mouseerror) {
     if (watchdogerror)
       print(u"Error: Failed to stop Watchdog Timer\n\r");
     if (goperror)
@@ -127,6 +140,8 @@ void roxus_setup(efi_handle_t handle, struct efi_system_table *system) {
       print(u"Error: Failed to set Text Mode\n\r");
     if (fserror)
       print(u"Error: Failed to open File System\n\r");
+    if (mouseerror)
+      print(u"Error: Failed to open Mouse Pointer\n\r");
   }
   else
     print(u"All Systems Operational\n\r");
