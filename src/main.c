@@ -21,21 +21,6 @@ efi_status_t efi_main(efi_handle_t handle, struct efi_system_table* system) {
   // Enable Cursor
   system->output->enableCursor(system->output, true);
 
-  // Test Mouse
-  uint32_t mx = 0, my = 0, mz = 0;
-  while (1) {
-    struct efi_simple_pointer_state state;
-    mouse_pointer->getState(mouse_pointer, &state);
-    mx += state.movementX;
-    my += state.movementY;
-    mz += state.movementZ;
-    efi_char_t buffer[16] = u"\0";
-    print(u"Mouse Data");
-    print(u": X="); print(itoa(mx, buffer, 10));
-    print(u", Y="); print(itoa(my, buffer, 10));
-    print(u", Z="); print(itoa(mz, buffer, 10));
-  }
-
   // Terminal
   struct efi_file_protocol* root;
   filesystem->openVolume(filesystem, &root);

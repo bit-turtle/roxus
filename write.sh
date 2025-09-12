@@ -1,4 +1,4 @@
-
+# Write Roxus EFI Partition
 pushd .
 cd $(dirname "$0") # $0 is the script's path
 # Build

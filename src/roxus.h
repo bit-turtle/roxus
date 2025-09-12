@@ -14,10 +14,13 @@ extern struct efi_runtime_services* runtime_services;
 extern struct efi_simple_text_output_protocol* text_output;
 extern struct efi_simple_text_input_protocol* text_input;
 extern struct efi_graphics_output_protocol* graphics_output;
-extern struct efi_simple_pointer_protocol* mouse_pointer;
 
 extern struct efi_loaded_image_protocol* loaded_image;
 extern struct efi_simple_file_system_protocol* filesystem;
+
+extern struct efi_simple_network_protocol* network;
+
+extern struct efi_simple_pointer_protocol* mouse_pointer;
 
 // Utility
 

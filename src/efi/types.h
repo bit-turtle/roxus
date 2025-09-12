@@ -55,6 +55,22 @@ enum efi_memory_type {
   EFI_MAX_MEMORY_TYPE
 };
 
+// Mac Address
+struct efi_mac_address {
+  uint8_t address[32];
+};
+// IP Addresses
+struct efi_ipv4_address {
+  uint8_t address[4];
+};
+struct efi_ipv6_address {
+  uint8_t address[16];
+};
+union efi_ip_address {
+  struct efi_ipv4_address ipv4;
+  struct efi_ipv6_address ipv6;
+};
+
 // Text Attributes
 #define EFI_FOREGROUND 0x0f
 #define EFI_BACKGROUND 0xf0

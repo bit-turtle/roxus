@@ -156,6 +156,87 @@ struct efi_simple_pointer_protocol {
 
 };
 
+// Simple Network Protocol
+#define EFI_SIMPLE_NETWORK_PROTOCOL_REVISION 0x00010000
+#define MAX_MCAST_FILTER_CNT 16
+#define EFI_SIMPLE_NETWORK_RECEIVE_UNICAST 0x01
+#define EFI_SIMPLE_NETWORK_RECEIVE_MULTICAST 0x02
+#define EFI_SIMPLE_NETWORK_RECEIVE_BROADCAST 0x04
+#define EFI_SIMPLE_NETWORK_RECEIVE_PROMISCUOUS 0x08
+#define EFI_SIMPLE_NETWORK_RECEIVE_PROMISCUOUS_MULTICAST 0x10
+enum efi_simple_network_state {
+  EfiSimpleNetworkStopped,
+  EfiSimpleNetworkStarted,
+  EfiSimpleNetworkInitialized,
+  EfiSimpleNetworkMaxState
+};
+struct efi_simple_network_mode {
+  uint32_t state;
+  uint32_t hwAddressSize;
+  uint32_t mediaHeaderSize;
+  uint32_t nvRamSize;
+  uint32_t nvRamAccessSize;
+  uint32_t receiveFilterMask;
+  uint32_t receiveFilterSetting;
+  uint32_t maxMCastFilterCount;
+  uint32_t mCastFilterCount;
+  struct efi_mac_address mCastFilter[MAX_MCAST_FILTER_CNT];
+  struct efi_mac_address currentAddress;
+  struct efi_mac_address broadcasAddress;
+  struct efi_mac_address permanentAddress;
+  uint8_t ifType;
+  bool maxAddressChangeable;
+  bool multipleTxSupported;
+  bool mediaPresentSupported;
+  bool mediaPresent;
+};
+struct efi_network_statistics {
+  uint64_t rxTotalFrames;
+  uint64_t rxGoodFrames;
+  uint64_t rxUndersizeFrames;
+  uint64_t rxOversizeFrames;
+  uint64_t rxDroppedFrames;
+  uint64_t rxUnicastFrames;
+  uint64_t rxBroadcastFrames;
+  uint64_t rxMulticastFrames;
+  uint64_t rxCrcErrorFrames;
+  uint64_t rxTotalBytes;
+  uint64_t txTotalFrames;
+  uint64_t txGoodFrames;
+  uint64_t txUndersizeFrames;
+  uint64_t txOversizeFrames;
+  uint64_t txDroppedFrames;
+  uint64_t txUnicastFrames;
+  uint64_t txBroadcastFrames;
+  uint64_t txMulticastFrames;
+  uint64_t txCrcErrorFrames;
+  uint64_t txTotalBytes;
+  uint64_t collisions;
+  uint64_t unsupportedProtocol;
+  uint64_t rxDuplicatedFrames;
+  uint64_t rxDecryptErrorFrames;
+  uint64_t txErrorFrames;
+  uint64_t txRetryFrames;
+};
+struct efi_simple_network_protocol {
+  uint64_t revision;
+  efi_status_t (*start)(struct efi_simple_network_protocol*);
+  efi_status_t (*stop)(struct efi_simple_network_protocol*);
+  efi_status_t (*initialize)(struct efi_simple_network_protocol*, efi_uint_t, efi_uint_t);
+  efi_status_t (*reset)(struct efi_simple_network_protocol*, bool);
+  efi_status_t (*shutdown)(struct efi_simple_network_protocol*);
+  efi_status_t (*receiveFilters)(struct efi_simple_network_protocol*, uint32_t, uint32_t, bool, efi_uint_t, struct efi_mac_address);
+  efi_status_t (*stationAddress)(struct efi_simple_network_protocol*, bool, struct efi_mac_address*);
+  efi_status_t (*statistics)(struct efi_simple_network_protocol*, bool, efi_uint_t*, struct efi_network_statistics*);
+  efi_status_t (*mCastIpToMac)(struct efi_simple_network_protocol*, bool, union efi_ip_address*, struct efi_mac_address*);
+  efi_status_t (*nvData)(struct efi_simple_network_protocol*, bool, efi_uint_t, efi_uint_t, void*);
+  efi_status_t (*getStatus)(struct efi_simple_network_protocol*, uint32_t*, void**);
+  efi_status_t (*transmit)(struct efi_simple_network_protocol*, efi_uint_t, efi_uint_t, void*, struct efi_mac_address*, struct efi_mac_address*, uint16_t);
+  efi_status_t (*receive)(struct efi_simple_network_protocol*, efi_uint_t*, efi_uint_t*, void*, struct efi_mac_address*, struct efi_mac_address*, uint16_t);
+  efi_event waitForPacket;
+  struct efi_simple_network_mode* mode;  
+};
+
 // GUID List
 #define EFI_LOADED_IMAGE_PROTOCOL_GUID \
   {0x5B1B31A1,0x9562,0x11d2,\
@@ -172,6 +253,10 @@ struct efi_simple_pointer_protocol {
 #define EFI_FILE_INFO_ID \
  {0x09576e92,0x6d3f,0x11d2,\
   {0x8e,0x39,0x00,0xa0,0xc9,0x69,0x72,0x3b}}
+
+#define EFI_SIMPLE_NETWORK_PROTOCOL_GUID \
+  {0xA19832B9,0xAC25,0x11D3,\
+    {0x9A,0x2D,0x00,0x90,0x27,0x3f,0xc1,0x4d}}
 
 #define EFI_SIMPLE_POINTER_PROTOCOL_GUID \
  {0x31878c87,0xb75,0x11d5,\

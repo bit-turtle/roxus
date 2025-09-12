@@ -12,3 +12,12 @@ A UEFI Operating System
 ### Test (Emulation)
 - Install QEMU x86_64
 - `test.sh` (builds and runs un qemu)
+
+### I/O Features
+| I/O Feature     | Current Implementation       | Details                          | Future Implementation                                           |
+|-----------------|------------------------------|----------------------------------|-----------------------------------------------------------------|
+| Console Output  | Simple Text Output Protocol  | With ANSI Escape Code Processing | Custom Text Rendering with Simple Text Output Protocol fallback |
+| Keyboard Input  | Simple Text Input Protocol   |                                  |                                                                 |
+| Graphics Output | Graphics Output Protocol BLT | Custom Image Format              | Graphics Output Protocol BLT with Console fallback              |
+| Mouse Input     | *Not Implemented*            |                                  | Simple Pointer Protocol                                         |
+| Sound Output    | *Not Implemented*            | UEFI Has no Sound Protocol       | Custom Universal Sound Driver                                   |
