@@ -373,6 +373,14 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
       system_table->output->outputString(system_table->output, u"Invalid Parameter");
     }
   }
+  else if (streq(argv[0], u"testpointer")) {
+    struct roxus_pointer_state state = pointer.getState();
+    efi_char_t buf[10];
+    print(u"X: ");
+    print(itoa(state.x, buf, 10));
+    print(u", Y: ");
+    print(itoa(state.y, buf, 10));
+  }
   else {
     status = system_table->output->outputString(system_table->output, u"Unknown Command");
     if (status != EFI_SUCCESS) return status;

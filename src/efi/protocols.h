@@ -133,29 +133,6 @@ struct efi_simple_file_system_protocol {
   efi_status_t (*openVolume)(struct efi_simple_file_system_protocol*, struct efi_file_protocol**);
 };
 
-// Simple Pointer
-struct efi_simple_pointer_mode {
-	uint64_t resolutionX;
-	uint64_t resolutionY;
-	uint64_t resolutionZ;
-	bool leftButton;
-	bool rightButton;
-};
-struct efi_simple_pointer_state {
-	int32_t movementX;
-	int32_t movementY;
-	int32_t movementZ;
-	bool leftButton;
-	bool rightButton;
-};
-struct efi_simple_pointer_protocol {
-	efi_status_t (*reset)(struct efi_simple_pointer_protocol*, bool);
-	efi_status_t (*getState)(struct efi_simple_pointer_protocol*, struct efi_simple_pointer_state*);
-	efi_event waitForInput;
-	struct efi_simple_pointer_mode* mode;
-
-};
-
 // Simple Network Protocol
 #define EFI_SIMPLE_NETWORK_PROTOCOL_REVISION 0x00010000
 #define MAX_MCAST_FILTER_CNT 16
@@ -237,6 +214,55 @@ struct efi_simple_network_protocol {
   struct efi_simple_network_mode* mode;  
 };
 
+// Simple Pointer Protocol
+struct efi_simple_pointer_mode {
+	uint64_t resolutionX;
+	uint64_t resolutionY;
+	uint64_t resolutionZ;
+	bool leftButton;
+	bool rightButton;
+};
+struct efi_simple_pointer_state {
+	int32_t movementX;
+	int32_t movementY;
+	int32_t movementZ;
+	bool leftButton;
+	bool rightButton;
+};
+struct efi_simple_pointer_protocol {
+	efi_status_t (*reset)(struct efi_simple_pointer_protocol*, bool);
+	efi_status_t (*getState)(struct efi_simple_pointer_protocol*, struct efi_simple_pointer_state*);
+	efi_event waitForInput;
+	struct efi_simple_pointer_mode* mode;
+};
+
+// Absolute Pointer Protocol
+#define EFI_ABSP_SupportsAltActive     0x00000001
+#define EFI_ABSP_SupportsPressureAsZ   0x00000002
+struct efi_absolute_pointer_mode {
+  uint64_t minX;
+  uint64_t minY;
+  uint64_t minZ;
+  uint64_t maxX;
+  uint64_t maxY;
+  uint64_t maxZ;
+  uint32_t attributes;
+};
+#define EFI_ABSP_TouchActive     0x00000001
+#define EFI_ABS_AltActive        0x00000002
+struct efi_absolute_pointer_state {
+  uint64_t currentX;
+  uint64_t currentY;
+  uint64_t currentZ;
+  uint32_t activeButtons;
+};
+struct efi_absolute_pointer_protocol {
+  efi_status_t (*reset)(struct efi_absolute_pointer_protocol*, bool);
+  efi_status_t (*getState)(struct efi_absolute_pointer_protocol*, struct efi_absolute_pointer_state*);
+  efi_event waitForInput;
+  struct efi_absolute_pointer_mode* mode;
+};
+
 // GUID List
 #define EFI_LOADED_IMAGE_PROTOCOL_GUID \
   {0x5B1B31A1,0x9562,0x11d2,\
@@ -261,5 +287,9 @@ struct efi_simple_network_protocol {
 #define EFI_SIMPLE_POINTER_PROTOCOL_GUID \
  {0x31878c87,0xb75,0x11d5,\
   {0x9a,0x4f,0x00,0x90,0x27,0x3f,0xc1,0x4d}}
+
+#define EFI_ABSOLUTE_POINTER_PROTOCOL_GUID \
+ {0x8D59D32B, 0xC655, 0x4AE9, \
+  {0x9B, 0x15, 0xF2, 0x59, 0x04, 0x99, 0x2A, 0x43}}
 
 #endif

@@ -16,9 +16,12 @@ struct efi_graphics_output_protocol* graphics_output;
 struct efi_loaded_image_protocol* loaded_image;
 struct efi_simple_file_system_protocol* filesystem;
 
-struct efi_simple_network_protocol* network;
+struct efi_simple_network_protocol* network = NULL;
 
-struct efi_simple_pointer_protocol* mouse_pointer;
+// Mouse Pointer
+struct roxus_pointer pointer;
+struct efi_simple_pointer_protocol* simple_pointer = NULL;
+struct efi_absolute_pointer_protocol* absolute_pointer = NULL;
 
 // Utility
 efi_status_t print(efi_char_t* string) {
@@ -38,6 +41,49 @@ efi_status_t print_ascii(char* string) {
 efi_status_t clear_screen() {
   return system_table->output->clearScreen(system_table->output);
 }
+
+// Roxus Protocols
+
+// Roxus Pointer
+bool roxus_pointer_exists() {
+  return (simple_pointer != NULL || absolute_pointer != NULL);
+}
+bool roxus_pointer_absolute() {
+  return (absolute_pointer != NULL);
+}
+struct roxus_pointer_state roxus_pointer_state = {0,0,0,false,false};
+struct roxus_pointer_state roxus_pointer_get_state() {
+  if (absolute_pointer != NULL) {
+    efi_status_t status;
+    struct efi_absolute_pointer_state state;
+    status = absolute_pointer->getState(absolute_pointer, &state);
+    if (status == EFI_SUCCESS) {
+      roxus_pointer_state.x = state.currentX;
+      roxus_pointer_state.y = state.currentY;
+      roxus_pointer_state.z = state.currentZ;
+      roxus_pointer_state.left = state.activeButtons&EFI_ABS_AltActive;
+      roxus_pointer_state.right = state.activeButtons&EFI_ABSP_TouchActive;
+    }
+  }
+  else if (simple_pointer != NULL) {
+    efi_status_t status;
+    struct efi_simple_pointer_state state;
+    status = simple_pointer->getState(simple_pointer, &state);
+    if (status == EFI_SUCCESS) {
+      roxus_pointer_state.x += state.movementX;
+      roxus_pointer_state.y += state.movementY;
+      roxus_pointer_state.z += state.movementZ;
+      roxus_pointer_state.left = state.leftButton;
+      roxus_pointer_state.right = state.rightButton;
+    }
+  }
+  return roxus_pointer_state;
+}
+struct roxus_pointer pointer = {
+  roxus_pointer_exists,
+  roxus_pointer_absolute,
+  roxus_pointer_get_state
+};
 
 // Setup
 bool watchdog_setup() {
@@ -116,12 +162,19 @@ bool network_setup() {
 
 bool mouse_setup() {
   efi_status_t status;
-  struct efi_guid pointer_guid = EFI_SIMPLE_POINTER_PROTOCOL_GUID;
-  // Install Simple Pointer Protocol
-  status = system_table->boot_services->openProtocol(system_handle, &pointer_guid, (void**)&mouse_pointer, system_handle, NULL, EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
-  if (status != EFI_SUCCESS) return true;
+  bool mouse = false;
+  struct efi_guid simple_pointer_guid = EFI_SIMPLE_POINTER_PROTOCOL_GUID;
+  struct efi_guid absolute_pointer_guid = EFI_ABSOLUTE_POINTER_PROTOCOL_GUID;
+  // Locate Simple Pointer Protocol
+  status = system_table->boot_services->locateProtocol(&simple_pointer_guid, NULL, &simple_pointer);
+  if (status == EFI_SUCCESS)
+    mouse = true;
+  // Locate Simple Pointer Protocol
+  status = system_table->boot_services->locateProtocol(&absolute_pointer_guid, NULL, &absolute_pointer);
+  if (status == EFI_SUCCESS)
+    mouse = true;
 
-  return false;
+  return !mouse;
 }
 
 void roxus_setup(efi_handle_t handle, struct efi_system_table *system) {
