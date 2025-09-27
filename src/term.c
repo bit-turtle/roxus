@@ -52,13 +52,15 @@ efi_status_t run(struct efi_file_protocol* file, struct efi_file_protocol** dir)
     return status;
   print(u"Script loaded!");
   // Run script
-  print(buffer);
   efi_char_t* start = buffer;
   efi_char_t* end = buffer;
-  while (*++end != u'\0') {
-    if (*end == u'\n') *end = u'\0';
-    print(start);
-    start = end+1;
+  bool running = true;
+  while (*++end != u'\0' && running) {
+    if (*end == u'\n') {
+      *end = u'\0';
+      command(start, dir, &running);
+      start = end+1;
+    }
   }
   // Dealloc script
   free(buffer);
@@ -210,11 +212,8 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
           uint32_t newwidth = getInt(argv[2]);
           uint32_t newheight = (argc > 3) ? getInt(argv[3]) : newwidth;
           struct efi_graphics_output_blt_pixel* newbuffer;
-          print(u"Resizing!");
           status = resize_image(buffer, width, height, &newbuffer, newwidth, newheight);
-          print(u"Resized");
           free(buffer);
-          print(u"Freed");
           if (status == EFI_SUCCESS) {
             buffer = newbuffer;
             width = newwidth;

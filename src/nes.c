@@ -1,6 +1,7 @@
 #include "nes.h"
 #include "efi/types.h"
 #include "roxus.h"
+#include "image.h"
 #include "libc.h"
 #include "string.h"
 #include <stddef.h>
@@ -18,12 +19,40 @@ enum console_type : uint8_t {
   NES = 0,
   VS_UNISYSTEM = 1,
   PLAYCHOICE_10 = 2,
-  EXTENDED = 3
+  EXTENDED = 3,
+  INVALID_CONSOLE_TYPE
 };
 
 efi_status_t print_number(uint16_t number) {
   efi_char_t number_buffer[16];
   return print(itoa(number, number_buffer, 10));
+}
+
+uint8_t get_chr_color(uint8_t* chr_rom, unsigned index, uint8_t x, uint8_t y) {
+  uint8_t upper = chr_rom[index*16+y]&(0x80 >> x);
+  upper = upper >> (7-x) << 1;
+  uint8_t lower = chr_rom[index*16+y+8]&(0x80 >> x);
+  lower = lower >> (7-x);
+  return upper | lower;
+}
+
+void render_chr_tile(uint8_t* chr_rom, unsigned index, struct efi_graphics_output_blt_pixel* image, struct efi_graphics_output_blt_pixel color1, struct efi_graphics_output_blt_pixel color2, struct efi_graphics_output_blt_pixel color3) {
+  for (uint8_t x = 0; x < 8; x++) for (uint8_t y = 0; y < 8; y++) {
+    switch(get_chr_color(chr_rom, index, x, y)) {
+      case 0:
+        // Transparent (No color change)
+        break;
+      case 1:
+        image[x%8+y*8] = color1;
+        break;
+      case 2:
+        image[x%8+y*8] = color2;
+        break;
+      case 3:
+        image[x%8+y*8] = color3;
+        break;
+    }
+  }
 }
 
 efi_status_t run_nes_rom(struct efi_file_protocol* rom) {
@@ -88,6 +117,10 @@ efi_status_t run_nes_rom(struct efi_file_protocol* rom) {
     print(u"Format: Archaic iNES\n\r");
   else if (ines)
     print(u"Format: iNES\n\r");
+  else if (ines07)
+    print(u"Format: iNES 0.7\n\r");
+  else
+    print(u"Format: Unknown");
   // Read Trainer
   bool trainer_present = ((header.flags[0]&(1<<2))!=0) ? true : false;
   uint8_t trainer[512];
@@ -160,7 +193,7 @@ efi_status_t run_nes_rom(struct efi_file_protocol* rom) {
     }
   }
   // Read Title (If Present)
-  uint8_t title[128] = "\0";
+  char title[128] = "\0";
   efi_uint_t title_size = 128;
   status = rom->read(rom, &title_size, &title);
   if (status != EFI_SUCCESS) {
@@ -189,31 +222,17 @@ efi_status_t run_nes_rom(struct efi_file_protocol* rom) {
   print_number(submapper);
   print(u"\n\r");
 
-  // Print CHR ROM as string because why not
-  uint8_t c = 0;
-  for (int y = 0; y < 8; y++) {
-    for (int x = 0; x < 8; x++) {
-      uint8_t offset = c*16+y;
-      uint8_t pixel = (chr_rom[offset]>>x)&0b1;
-      pixel |= ((chr_rom[offset+8]>>x)&0b1)<<1;
-      switch (pixel) {
-        case 0:
-          print(u" ");
-          break;
-        case 1:
-          print(u"░");
-          break;
-        case 2:
-          print(u"▒");
-          break;
-        case 3:
-          print(u"▒");
-          break;
-        default:
-          print(u"?");
-      }
-    }
-    print(u"\r\n");
+  // Display CHR ROM
+  struct efi_graphics_output_blt_pixel color1 = {255,0,0,0};
+  struct efi_graphics_output_blt_pixel color2 = {0,255,0,0};
+  struct efi_graphics_output_blt_pixel color3 = {0,0,255,0};
+  for (unsigned c = 0; c < 4; c++) {
+    struct efi_graphics_output_blt_pixel tile[8*8] = {0};
+    render_chr_tile(chr_rom, c, tile, color1, color2, color3);
+    struct efi_graphics_output_blt_pixel* resized;
+    resize_image(tile, 8, 8, &resized, 256, 256);
+    graphics_output->blt(graphics_output, resized, EFI_BLT_BUFFER_TO_VIDEO, 0, 0, (c%2)*256, (c/2)*256, 256, 256, 0);
+    free(resized);
   }
   
   // Cleanup
