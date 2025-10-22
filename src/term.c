@@ -13,6 +13,7 @@
 #include "roxus.h"
 #include "image.h"
 #include "nes.h"
+#include "font.h"
 
 efi_status_t term() {
   efi_status_t status;
@@ -188,6 +189,30 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
     }
     else {
       run_nes_rom(file);
+    }
+  }
+  else if (streq(argv[0], u"font")) {
+    struct efi_file_protocol* file;
+    status = (*dir)->open(*dir, &file, argv[1], EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+    if (status != EFI_SUCCESS) {
+      print(u"Failed to open file: ");
+      print(argv[1]);
+      print(u"\n\r");
+    }
+    else {
+      struct font* font = loadfont(file);
+      if (font == NULL) {
+        print(u"Failed to load font");
+      }
+      else {
+        struct efi_graphics_output_blt_pixel white = {255,255,255,255};
+        struct efi_graphics_output_blt_pixel black = {0,0,0,0};
+        struct rendered_font* render = renderfont(font, 20, &white, &black);
+        for (efi_uint_t i = 0; argv[2][i] != u'\0'; i++) {
+          struct rendered_character* character = getcharacter(render, (uint32_t)argv[2][i]);
+          graphics_output->blt(graphics_output, character->render, EFI_BLT_BUFFER_TO_VIDEO, 0, 0, 20*i, 0, render->width, render->height, 0);
+        }
+      }
     }
   }
   else if (streq(argv[0], u"ri")) {

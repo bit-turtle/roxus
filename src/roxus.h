@@ -8,6 +8,7 @@
 void roxus_setup(efi_handle_t handle, struct efi_system_table* system);
 
 // Utility
+efi_status_t screenshot(struct efi_graphics_output_blt_pixel**);
 efi_status_t print(efi_char_t* string);
 efi_status_t print_ascii(char* string);
 efi_status_t clear_screen();

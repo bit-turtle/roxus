@@ -54,16 +54,21 @@ efi_status_t resize_image(struct efi_graphics_output_blt_pixel* original, uint32
     return EFI_BUFFER_TOO_SMALL;
 
   // Resize Image
+  resize_image_buffer(original, width, height, *newimage, newwidth, newheight);
+
+  return EFI_SUCCESS;
+}
+
+void resize_image_buffer(struct efi_graphics_output_blt_pixel* original, uint32_t width, uint32_t height, struct efi_graphics_output_blt_pixel* imagebuffer, uint32_t bufferwidth, uint32_t bufferheight) {
+  // Resize Image
   uint64_t fixedpoint = 0xffff;
-  uint64_t xscale = width*fixedpoint/newwidth;
-  uint64_t yscale = height*fixedpoint/newheight;
-  for (uint32_t x = 0; x < newwidth; x++) for (uint32_t y = 0; y < newheight; y++) {
-    uint64_t newpixel = y*newwidth+x;
+  uint64_t xscale = width*fixedpoint/bufferwidth;
+  uint64_t yscale = height*fixedpoint/bufferheight;
+  for (uint32_t x = 0; x < bufferwidth; x++) for (uint32_t y = 0; y < bufferheight; y++) {
+    uint64_t bufferpixel = y*bufferwidth+x;
     uint32_t originalx = x*xscale/fixedpoint;
     uint32_t originaly = y*yscale/fixedpoint;
     uint64_t originalpixel = originaly*width+originalx;
-    (*newimage)[newpixel] = original[originalpixel];
+    imagebuffer[bufferpixel] = original[originalpixel];
   }
-
-  return EFI_SUCCESS;
 }

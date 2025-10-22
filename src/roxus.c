@@ -2,6 +2,7 @@
 
 #include "bsod.h"
 #include "string.h"
+#include "libc.h"
 #include <stddef.h>
 
 // System
@@ -10,6 +11,7 @@ struct efi_system_table* system_table;
 struct efi_boot_services* boot_services;
 struct efi_runtime_services* runtime_services;
 struct efi_simple_text_output_protocol* text_output;
+int32_t text_output_height, text_output_width;
 struct efi_simple_text_input_protocol* text_input;
 struct efi_graphics_output_protocol* graphics_output;
 
@@ -24,19 +26,48 @@ struct efi_simple_pointer_protocol* simple_pointer = NULL;
 struct efi_absolute_pointer_protocol* absolute_pointer = NULL;
 
 // Utility
+efi_status_t screenshot(struct efi_graphics_output_blt_pixel** image) {
+  *image = malloc(sizeof(struct efi_graphics_output_blt_pixel) * graphics_output->mode->info->horizontalResolution * graphics_output->mode->info->verticalResolution);
+  if (*image == NULL)
+    return EFI_BUFFER_TOO_SMALL;
+  graphics_output->blt(graphics_output, *image, EFI_BLT_VIDEO_TO_BLT_BUFFER, 0, 0, 0, 0, graphics_output->mode->info->horizontalResolution, graphics_output->mode->info->verticalResolution, 0);
+  return EFI_SUCCESS;
+}
+struct efi_graphics_output_blt_pixel* mainscroll = NULL;
+struct efi_graphics_output_blt_pixel* scrollback[64] = {NULL};
 efi_status_t print(efi_char_t* string) {
+  if (mainscroll != NULL) {
+    graphics_output->blt(graphics_output, mainscroll, EFI_BLT_BUFFER_TO_VIDEO, 0, 0, 0, 0, graphics_output->mode->info->horizontalResolution, graphics_output->mode->info->verticalResolution, graphics_output->mode->info->horizontalResolution);
+    free(mainscroll);
+    mainscroll = NULL;
+  }
+  efi_char_t* end = string;
+  unsigned lines = 0;
+  while(*end != u'\0') {
+    if (*end == u'\n')
+      lines++;
+    end++;
+  };
+  if (text_output->mode->cursorRow+lines >= text_output_height) {
+    struct efi_graphics_output_blt_pixel** scroll = NULL;
+    for (int i = 0; scrollback[i] == NULL; i++)
+      scroll = &scrollback[i];
+    screenshot(scroll);
+    clear_screen();
+  }
   return system_table->output->outputString(system_table->output, string);
 }
 efi_status_t print_ascii(char* string) {
   efi_status_t status;
-  efi_char_t buffer[2] = u"?\0";
-  while (*string != '\0') {
-    buffer[0] = *string++;
-    status = system_table->output->outputString(system_table->output, buffer);
-    if (status != EFI_SUCCESS)
-      return status;
-  }
-  return EFI_SUCCESS;
+  efi_char_t* buffer;
+  unsigned length = 0;
+  while (string[length++] != '\0');
+  buffer = malloc(sizeof(efi_char_t)*length);
+  for (int i = 0; i < length; i++)
+    buffer[i] = string[i];
+  status = print(buffer);
+  free(buffer);
+  return status;
 }
 efi_status_t clear_screen() {
   return system_table->output->clearScreen(system_table->output);
@@ -65,7 +96,7 @@ struct roxus_pointer_state roxus_pointer_get_state() {
       roxus_pointer_state.right = state.activeButtons&EFI_ABSP_TouchActive;
     }
   }
-  else if (simple_pointer != NULL) {
+  if (simple_pointer != NULL) {
     efi_status_t status;
     struct efi_simple_pointer_state state;
     status = simple_pointer->getState(simple_pointer, &state);
@@ -127,6 +158,8 @@ bool text_setup() {
       best_mode = mode;
     }
   }
+  text_output_width = best_width;
+  text_output_height = best_height;
   status = text_output->setMode(text_output, best_mode);
   if (status != EFI_SUCCESS)
     return true;

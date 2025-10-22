@@ -223,17 +223,17 @@ efi_status_t run_nes_rom(struct efi_file_protocol* rom) {
   print(u"\n\r");
 
   // Display CHR ROM
+  struct efi_graphics_output_blt_pixel* blt = malloc(sizeof(struct efi_graphics_output_blt_pixel)*256*256);
   struct efi_graphics_output_blt_pixel color1 = {255,0,0,0};
   struct efi_graphics_output_blt_pixel color2 = {0,255,0,0};
   struct efi_graphics_output_blt_pixel color3 = {0,0,255,0};
   for (unsigned c = 0; c < 4; c++) {
     struct efi_graphics_output_blt_pixel tile[8*8] = {0};
     render_chr_tile(chr_rom, c, tile, color1, color2, color3);
-    struct efi_graphics_output_blt_pixel* resized;
-    resize_image(tile, 8, 8, &resized, 256, 256);
-    graphics_output->blt(graphics_output, resized, EFI_BLT_BUFFER_TO_VIDEO, 0, 0, (c%2)*256, (c/2)*256, 256, 256, 0);
-    free(resized);
+    resize_image_buffer(tile, 8, 8, blt, 256, 256);
+    graphics_output->blt(graphics_output, blt, EFI_BLT_BUFFER_TO_VIDEO, 0, 0, (c%2)*256, (c/2)*256, 256, 256, 0);
   }
+  free(blt);
   
   // Cleanup
   free(prg_rom);
