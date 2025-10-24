@@ -24,10 +24,10 @@ void* malloc(size_t size) {
   return buffer;
 }
 
-void* calloc(size_t size) {
-  void* buffer = malloc(size);
+void* calloc(size_t num, size_t size) {
+  void* buffer = malloc(num*size);
   if (buffer != NULL)
-    for (void* byte = buffer; byte < buffer+size; byte++)
+    for (void* byte = buffer; byte < buffer+num*size; byte++)
       *(uint8_t*)byte = 0;
   return buffer;
 }

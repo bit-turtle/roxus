@@ -48,7 +48,7 @@ efi_status_t print(efi_char_t* string) {
       lines++;
     end++;
   };
-  if (text_output->mode->cursorRow+lines >= text_output_height) {
+  if (false && text_output->mode->cursorRow+lines >= text_output_height) {
     struct efi_graphics_output_blt_pixel** scroll = NULL;
     for (int i = 0; scrollback[i] == NULL; i++)
       scroll = &scrollback[i];
