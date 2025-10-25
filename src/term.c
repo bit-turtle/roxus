@@ -211,7 +211,7 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
         struct rendered_font* render = renderfont(font, 64, white, black);
         print(u"Rendered Font!\n\r");
         for (int i = 0; argv[2][i] != u'\0'; i++)
-          graphics_output->blt(graphics_output, getcharacter(render, argv[2][i]), EFI_BLT_BUFFER_TO_VIDEO, 0, 0, 0, 0, render->width, render->height, 0);
+          graphics_output->blt(graphics_output, getcharacter(render, argv[2][i]), EFI_BLT_BUFFER_TO_VIDEO, 0, 0, i*render->width, 0, render->width, render->height, 0);
       }
     }
   }

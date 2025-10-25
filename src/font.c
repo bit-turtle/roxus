@@ -113,10 +113,10 @@ struct rendered_font* renderfont(struct font* font, efi_uint_t size, struct efi_
       for (efi_uint_t y = 0; y < tile_size; y++) for (efi_uint_t x = 0; x < tile_size; x++) {
         if (
           tile == 1 ||
-          tile == 2 && y >= tile_size-x ||
+          tile == 2 && y >= tile_size-x-1 ||
           tile == 3 && y >= x ||
           tile == 4 && y <= x ||
-          tile == 5 && y <= tile_size-x ||
+          tile == 5 && y <= tile_size-x-1 ||
           tile >= 6 && (tile == 7) != (
             // Top Right
             (x>=tile_size/2 && y<tile_size/2) && (y >= x+1 - tile_size/2) ||
