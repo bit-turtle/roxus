@@ -92,10 +92,9 @@ uint8_t read3(uint8_t* base, size_t index) {
   return value;
 }
 
-struct rendered_font* renderfont(struct font* font, efi_uint_t size, struct efi_graphics_output_blt_pixel color, struct efi_graphics_output_blt_pixel background) {
+struct rendered_font* renderfont(struct font* font, efi_uint_t tile_size, struct efi_graphics_output_blt_pixel color, struct efi_graphics_output_blt_pixel background) {
 
   struct rendered_font* render = malloc(sizeof(struct rendered_font) + sizeof(struct efi_graphics_output_blt_pixel*)*font->entries);
-  efi_uint_t tile_size = size/font->width;
   render->font = font;
   render->width = font->width*tile_size;
   render->height = font->height*tile_size;
@@ -128,10 +127,10 @@ struct rendered_font* renderfont(struct font* font, efi_uint_t size, struct efi_
             (x<tile_size/2 && y>=tile_size/2) && (y < x + tile_size/2)
           )
         ) {
-          render->render[entry][ (x+offsetx) + (y+offsety)*size ] = color;
+          render->render[entry][ (x+offsetx) + (y+offsety)*render->width ] = color;
         }
         else {
-          render->render[entry][ (x+offsetx) + (y+offsety)*size ] = background;
+          render->render[entry][ (x+offsetx) + (y+offsety)*render->width ] = background;
         }
       }
       

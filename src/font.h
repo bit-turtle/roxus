@@ -24,6 +24,6 @@ struct rendered_font {
 
 struct font* loadfont(struct efi_file_protocol* file);
 
-struct rendered_font* renderfont(struct font* font, efi_uint_t size, struct efi_graphics_output_blt_pixel color, struct efi_graphics_output_blt_pixel background);
+struct rendered_font* renderfont(struct font* font, efi_uint_t tile_size, struct efi_graphics_output_blt_pixel color, struct efi_graphics_output_blt_pixel background);
 
 struct efi_graphics_output_blt_pixel* getcharacter(struct rendered_font* rendered_font, uint32_t codepoint);
