@@ -208,7 +208,7 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
         print(u"Loaded Font!");
         struct efi_graphics_output_blt_pixel white = {255,255,255,255};
         struct efi_graphics_output_blt_pixel black = {0,0,0,0};
-        struct rendered_font* render = renderfont(font, 16, white, black);
+        struct rendered_font* render = renderfont(font, argc > 3 ? getInt(argv[3]): 16, white, black);
         print(u"Rendered Font!\n\r");
         for (int i = 0; argv[2][i] != u'\0'; i++)
           graphics_output->blt(graphics_output, getcharacter(render, argv[2][i]), EFI_BLT_BUFFER_TO_VIDEO, 0, 0, i*render->width, 0, render->width, render->height, 0);
