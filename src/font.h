@@ -27,3 +27,5 @@ struct font* loadfont(struct efi_file_protocol* file);
 struct rendered_font* renderfont(struct font* font, efi_uint_t tile_size, struct efi_graphics_output_blt_pixel color, struct efi_graphics_output_blt_pixel background);
 
 struct efi_graphics_output_blt_pixel* getcharacter(struct rendered_font* rendered_font, uint32_t codepoint);
+
+struct efi_graphics_output_blt_pixel* displaytext(struct rendered_font* rendered_font, efi_uint_t width, efi_uint_t height, efi_char_t* text, efi_uint_t scroll);
