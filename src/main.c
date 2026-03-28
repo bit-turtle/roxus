@@ -12,6 +12,8 @@
 #include "roxus.h"
 #include "libc.h"
 
+#include "ring.h"
+
 efi_status_t efi_main(efi_handle_t handle, struct efi_system_table* system) {
   efi_status_t status;
   

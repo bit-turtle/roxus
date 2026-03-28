@@ -14,6 +14,7 @@
 #include "image.h"
 #include "nes.h"
 #include "font.h"
+#include "ring.h"
 
 efi_status_t term() {
   efi_status_t status;
@@ -189,6 +190,7 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
     }
     else {
       run_nes_rom(file);
+      file->close(file);
     }
   }
   else if (streq(argv[0], u"font")) {
@@ -210,8 +212,12 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
         struct efi_graphics_output_blt_pixel black = {0,0,0,0};
         struct rendered_font* render = renderfont(font, argc > 3 ? getInt(argv[3]): 16, white, black);
         print(u"Rendered Font!\n\r");
-        for (int i = 0; argv[2][i] != u'\0'; i++)
-          graphics_output->blt(graphics_output, getcharacter(render, argv[2][i]), EFI_BLT_BUFFER_TO_VIDEO, 0, 0, i*render->width, 0, render->width, render->height, 0);
+        for (int i = 0; argv[2][i] != u'\0'; i++) {
+          struct efi_graphics_output_blt_pixel* character = getcharacter(render, argv[2][i]);
+          if (character == NULL)
+            continue;
+          graphics_output->blt(graphics_output, character, EFI_BLT_BUFFER_TO_VIDEO, 0, 0, i*render->width, 0, render->width, render->height, 0);
+        }
       }
     }
   }
@@ -324,6 +330,17 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
         status = system_table->output->outputString(system_table->output, u"?");
       if (status != EFI_SUCCESS) return status;
     }
+  }
+  // Ringbuffer test
+  else if (streq(argv[0], u"ring")) {
+  	struct ringbuffer* ringbuffer = forge_ringbuffer(16);
+	for (int i = 1; i < argc; i++) {
+		write_ringbuffer((uint8_t)argv[i][0], ringbuffer);
+	}
+	while (data_ringbuffer(ringbuffer)) {
+		efi_char_t c[] = {read_ringbuffer(ringbuffer), 0};
+		print(c);
+	}
   }
   // graphics_output Test Commands
   else if (streq(argv[0], u"gopinfo")) {
