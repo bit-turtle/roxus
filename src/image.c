@@ -4,7 +4,7 @@
 
 #include "libc.h"
 
-efi_status_t load_image(struct efi_file_protocol *file, struct efi_graphics_output_blt_pixel** buffer, uint32_t* width, uint32_t* height) {
+efi_status_t load_image_buffer(struct efi_file_protocol *file, struct efi_graphics_output_blt_pixel** buffer, uint32_t* width, uint32_t* height) {
   efi_status_t status;
 
   // Read Header
@@ -47,18 +47,6 @@ efi_status_t load_image(struct efi_file_protocol *file, struct efi_graphics_outp
   return EFI_SUCCESS;
 }
 
-efi_status_t resize_image(struct efi_graphics_output_blt_pixel* original, uint32_t width, uint32_t height, struct efi_graphics_output_blt_pixel** newimage, uint32_t newwidth, uint32_t newheight) {
-  // Allocate New Image
-  *newimage = malloc(newwidth*newheight*sizeof(struct efi_graphics_output_blt_pixel));
-  if (*newimage == NULL)
-    return EFI_BUFFER_TOO_SMALL;
-
-  // Resize Image
-  resize_image_buffer(original, width, height, *newimage, newwidth, newheight);
-
-  return EFI_SUCCESS;
-}
-
 void resize_image_buffer(struct efi_graphics_output_blt_pixel* original, uint32_t width, uint32_t height, struct efi_graphics_output_blt_pixel* imagebuffer, uint32_t bufferwidth, uint32_t bufferheight) {
   // Resize Image
   uint64_t fixedpoint = 0xffff;
@@ -71,4 +59,81 @@ void resize_image_buffer(struct efi_graphics_output_blt_pixel* original, uint32_
     uint64_t originalpixel = originaly*width+originalx;
     imagebuffer[bufferpixel] = original[originalpixel];
   }
+}
+
+void insert_image_buffer(struct efi_graphics_output_blt_pixel* source, uint32_t insertx, uint32_t inserty, uint32_t width, uint32_t height, struct efi_graphics_output_blt_pixel* dest, uint32_t destwidth, uint32_t destheight, uint32_t copyx, uint32_t copyy, uint32_t copywidth, uint32_t copyheight) {
+	// Default values
+	if (copywidth == 0)
+		copywidth = width;
+	if (copyheight == 0)
+		copyheight = height;
+	// Copy pixels
+	for (uint32_t x = insertx; x < insertx+copywidth; x++) {
+		if (x >= destwidth)
+			continue;
+		for (uint32_t y = inserty; y < inserty+copyheight; y++) {
+			if (y >= destheight)
+				continue;
+			// Copy
+			dest[y*destwidth+x] = source[(y-inserty+copyy)*width+(x-insertx+copyx)];
+		}
+	}
+}
+
+struct efi_graphics_output_blt_pixel* copy_image_buffer(struct efi_graphics_output_blt_pixel* buffer, uint32_t width, uint32_t height) {
+	struct efi_graphics_output_blt_pixel* image = malloc(sizeof(struct efi_graphics_output_blt_pixel)*width*height);
+	if (image == NULL)
+		return NULL;
+	for (uint64_t i = 0; i < width*height; i++)
+		image[i] = buffer[i];
+	return image;
+}
+
+void free_image(struct image* image) {
+	free(image->data);
+	free(image);	
+}
+
+struct image* load_image(struct efi_file_protocol* file){
+	struct image* image = malloc(sizeof(struct image));
+	if (image == NULL)
+		return NULL;
+	if (load_image_buffer(file, &image->data, &image->width, &image->height) != EFI_SUCCESS) {
+		free(image);
+		return NULL;
+	}
+	return image;
+}
+
+struct image* resize_image(struct image* source, uint32_t width, uint32_t height) {
+	struct image* image = malloc(sizeof(struct image));
+	if (image == NULL)
+		return NULL;
+	image->width = width;
+	image->height = height;
+	image->data = malloc(sizeof(struct efi_graphics_output_blt_pixel)*width*height);
+	if (image->data == NULL) {
+		free(image);
+		return NULL;
+	}
+	resize_image_buffer(source->data, source->width, source->height, image->data, width, height);
+	return image;
+}
+
+void insert_image(struct image* dest, struct image* image, uint32_t destx, uint32_t desty, uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
+	insert_image_buffer(image->data, destx, desty, image->width, image->height, dest->data, dest->width, dest->height, x, y, width, height);
+}
+
+struct image* copy_image(struct image* source) {
+	struct image* image = malloc(sizeof(struct image));
+	if (image == NULL)
+		return NULL;
+	image->width = source->width;
+	image->height = source->height;
+	image->data = copy_image_buffer(source->data, source->width, source->height);
+	if (image->data == NULL) {
+		free(image);
+		return NULL;
+	}
+	return image;
 }

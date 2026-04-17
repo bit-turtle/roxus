@@ -15,9 +15,9 @@ efi_status_t clear_screen();
 
 // Roxus Protocols
 struct roxus_pointer_state {
-  uint64_t x;
-  uint64_t y;
-  uint64_t z;
+  int64_t x;
+  int64_t y;
+  int64_t z;
   bool left;
   bool right;
 };

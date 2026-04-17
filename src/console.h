@@ -1,17 +1,18 @@
 #include <stdint.h>
 #include <stddef.h>
-#include "efi/types.h"
 #include "font.h"
+#include "ring.h"
+#include "image.h"
 
 struct terminal {
-	// Output Dimensions
-	efi_uint_t width;
-	efi_uint_t height;
-	struct efi_graphics_output_blt_pixel* output;
+	// Display
+	struct image display;
 	// Font
-	struct font* font;	
-	efi_uint_t size;
+	struct font* font;
+	uint16_t size;
 	struct rendered_font* render;
-	// Ring Buffer
-	
-}
+	// Output buffer
+	struct ringbuffer* output;
+};
+
+struct terminal* create_terminal(uint32_t width, uint32_t height, struct font* font, uint16_t size, uint16_t buffer_size);

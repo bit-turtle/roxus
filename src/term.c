@@ -232,7 +232,7 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
     else {
       uint32_t width, height;
       struct efi_graphics_output_blt_pixel* buffer;
-      status = load_image(file, &buffer, &width, &height);
+      status = load_image_buffer(file, &buffer, &width, &height);
       if (status != EFI_SUCCESS) {
         print(u"Failed to read image: ");
         print(argv[1]);
@@ -242,8 +242,8 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
         if (argc > 2) {
           uint32_t newwidth = getInt(argv[2]);
           uint32_t newheight = (argc > 3) ? getInt(argv[3]) : newwidth;
-          struct efi_graphics_output_blt_pixel* newbuffer;
-          status = resize_image(buffer, width, height, &newbuffer, newwidth, newheight);
+          struct efi_graphics_output_blt_pixel* newbuffer = malloc(sizeof(struct efi_graphics_output_blt_pixel)*newwidth*newheight);
+          resize_image_buffer(buffer, width, height, newbuffer, newwidth, newheight);
           free(buffer);
           if (status == EFI_SUCCESS) {
             buffer = newbuffer;
@@ -415,12 +415,15 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
     }
   }
   else if (streq(argv[0], u"testpointer")) {
-    struct roxus_pointer_state state = pointer.getState();
-    efi_char_t buf[10];
-    print(u"X: ");
-    print(itoa(state.x, buf, 10));
-    print(u", Y: ");
-    print(itoa(state.y, buf, 10));
+    for (int i = 0; i < 100000; i++) {
+	    struct roxus_pointer_state state = pointer.getState();
+	    efi_char_t buf[160];
+	    print(u"X: ");
+	    print(itoa(state.x, buf, 10));
+	    print(u", Y: ");
+	    print(itoa(state.y, buf, 10));
+	    print(u"\n\r");
+    }
   }
   else {
     status = system_table->output->outputString(system_table->output, u"Unknown Command");

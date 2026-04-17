@@ -263,6 +263,29 @@ struct efi_absolute_pointer_protocol {
   struct efi_absolute_pointer_mode* mode;
 };
 
+// PCI IO Protocol
+struct efi_pci_io_protocol {
+	void* pollmem;
+	void* pollio;
+	void* mem;
+	void* io;
+	void* pci;
+	void* copymem;
+	void* map;
+	void* unmap;
+	void* allocatebuffer;
+	void* freebuffer;
+	void* flush;
+	void* getlocation;
+	void* attributes;
+	void* getbarattributes;
+	void* setbarattributes;
+	uint64_t romsize;
+	void* romimage;
+};
+
+// USB
+
 // GUID List
 #define EFI_LOADED_IMAGE_PROTOCOL_GUID \
   {0x5B1B31A1,0x9562,0x11d2,\
@@ -291,5 +314,13 @@ struct efi_absolute_pointer_protocol {
 #define EFI_ABSOLUTE_POINTER_PROTOCOL_GUID \
  {0x8D59D32B, 0xC655, 0x4AE9, \
   {0x9B, 0x15, 0xF2, 0x59, 0x04, 0x99, 0x2A, 0x43}}
+
+#define EFI_PCI_IO_PROTOCOL_GUID \
+ {0x4cf5b200,0x68b8,0x4ca5,\
+   {0x9e,0xec,0xb2,0x3e,0x3f,0x50,0x02,0x9a}}
+
+#define EFI_USB2_HC_PROTOCOL_GUID \
+  {0x3e745226,0x9818,0x45b6,\
+    {0xa2,0xac,0xd7,0xcd,0x0e,0x8b,0xa2,0xbc}}
 
 #endif

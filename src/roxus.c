@@ -84,6 +84,7 @@ bool roxus_pointer_absolute() {
 }
 struct roxus_pointer_state roxus_pointer_state = {0,0,0,false,false};
 struct roxus_pointer_state roxus_pointer_get_state() {
+  /*
   if (absolute_pointer != NULL) {
     efi_status_t status;
     struct efi_absolute_pointer_state state;
@@ -94,8 +95,10 @@ struct roxus_pointer_state roxus_pointer_get_state() {
       roxus_pointer_state.z = state.currentZ;
       roxus_pointer_state.left = state.activeButtons&EFI_ABS_AltActive;
       roxus_pointer_state.right = state.activeButtons&EFI_ABSP_TouchActive;
+      return roxus_pointer_state;
     }
   }
+  */
   if (simple_pointer != NULL) {
     efi_status_t status;
     struct efi_simple_pointer_state state;
@@ -106,6 +109,7 @@ struct roxus_pointer_state roxus_pointer_get_state() {
       roxus_pointer_state.z += state.movementZ;
       roxus_pointer_state.left = state.leftButton;
       roxus_pointer_state.right = state.rightButton;
+      return roxus_pointer_state;
     }
   }
   return roxus_pointer_state;

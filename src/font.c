@@ -92,7 +92,7 @@ uint8_t read3(uint8_t* base, size_t index) {
   return value;
 }
 
-struct rendered_font* renderfont(struct font* font, efi_uint_t tile_size, struct efi_graphics_output_blt_pixel color, struct efi_graphics_output_blt_pixel background) {
+struct rendered_font* renderfont(struct font* font, uint16_t tile_size, struct efi_graphics_output_blt_pixel color, struct efi_graphics_output_blt_pixel background) {
 
   struct rendered_font* render = malloc(sizeof(struct rendered_font) + sizeof(struct efi_graphics_output_blt_pixel*)*font->entries);
   render->font = font;
