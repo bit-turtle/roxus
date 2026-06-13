@@ -1,8 +1,8 @@
-#include "roxus.h"
+#include <roxus/roxus.h>
 
-#include "bsod.h"
-#include "string.h"
-#include "libc.h"
+#include <roxus/bsod.h>
+#include <roxus/string.h>
+#include <stdlib.h>
 #include <stddef.h>
 
 // System
@@ -11,9 +11,10 @@ struct efi_system_table* system_table;
 struct efi_boot_services* boot_services;
 struct efi_runtime_services* runtime_services;
 struct efi_simple_text_output_protocol* text_output;
-int32_t text_output_height, text_output_width;
+uint32_t text_output_height, text_output_width;
 struct efi_simple_text_input_protocol* text_input;
 struct efi_graphics_output_protocol* graphics_output;
+uint32_t graphics_output_height, graphics_output_width;
 
 struct efi_loaded_image_protocol* loaded_image;
 struct efi_simple_file_system_protocol* filesystem;
@@ -21,9 +22,8 @@ struct efi_simple_file_system_protocol* filesystem;
 struct efi_simple_network_protocol* network = NULL;
 
 // Mouse Pointer
-struct roxus_pointer pointer;
+struct roxus_pointer pointer = {};
 struct efi_simple_pointer_protocol* simple_pointer = NULL;
-struct efi_absolute_pointer_protocol* absolute_pointer = NULL;
 
 // Utility
 efi_status_t screenshot(struct efi_graphics_output_blt_pixel** image) {
@@ -76,29 +76,8 @@ efi_status_t clear_screen() {
 // Roxus Protocols
 
 // Roxus Pointer
-bool roxus_pointer_exists() {
-  return (simple_pointer != NULL || absolute_pointer != NULL);
-}
-bool roxus_pointer_absolute() {
-  return (absolute_pointer != NULL);
-}
 struct roxus_pointer_state roxus_pointer_state = {0,0,0,false,false};
 struct roxus_pointer_state roxus_pointer_get_state() {
-  /*
-  if (absolute_pointer != NULL) {
-    efi_status_t status;
-    struct efi_absolute_pointer_state state;
-    status = absolute_pointer->getState(absolute_pointer, &state);
-    if (status == EFI_SUCCESS) {
-      roxus_pointer_state.x = state.currentX;
-      roxus_pointer_state.y = state.currentY;
-      roxus_pointer_state.z = state.currentZ;
-      roxus_pointer_state.left = state.activeButtons&EFI_ABS_AltActive;
-      roxus_pointer_state.right = state.activeButtons&EFI_ABSP_TouchActive;
-      return roxus_pointer_state;
-    }
-  }
-  */
   if (simple_pointer != NULL) {
     efi_status_t status;
     struct efi_simple_pointer_state state;
@@ -114,11 +93,6 @@ struct roxus_pointer_state roxus_pointer_get_state() {
   }
   return roxus_pointer_state;
 }
-struct roxus_pointer pointer = {
-  roxus_pointer_exists,
-  roxus_pointer_absolute,
-  roxus_pointer_get_state
-};
 
 // Setup
 bool watchdog_setup() {
@@ -137,11 +111,30 @@ bool gop_setup() {
   struct efi_graphics_output_mode_information* info;
   efi_uint_t infosize, nativeMode = 0;
   status = graphics_output->queryMode(graphics_output, graphics_output->mode==NULL?0:graphics_output->mode->mode, &infosize, &info);
-  if (status == EFI_NOT_STARTED) {
-    // default to mode zero
-    status = graphics_output->setMode(graphics_output, 0);
-    if (status != EFI_SUCCESS) return true;
+  // Find best graphics mode
+  uint64_t bestres = 0;
+  uint32_t bestwidth, bestheight;
+  uint32_t bestmode;
+  for (uint32_t mode = 0; mode < graphics_output->mode->maxMode; mode++) {
+    efi_status_t status;
+    efi_uint_t size;
+    struct efi_graphics_output_mode_information* info;
+    status = graphics_output->queryMode(graphics_output, mode, &size, &info);
+    if (status == EFI_SUCCESS) {
+      uint64_t res = info->horizontalResolution * info->verticalResolution;
+      if (res > bestres) {
+      	bestres = res;
+	bestmode = mode;
+	bestwidth = info->horizontalResolution;
+	bestheight = info->verticalResolution;
+      }
+    }
   }
+  graphics_output_width = bestwidth;
+  graphics_output_height = bestheight;
+  // Set mode
+  status = graphics_output->setMode(graphics_output, bestmode);
+  if (status != EFI_SUCCESS) return true;
 
   return false;
 }
@@ -150,21 +143,25 @@ bool text_setup() {
   text_input = system_table->input;
   // Find best text mode
   efi_status_t status;
-  efi_uint_t best_width = 0, best_height = 0;
-  efi_uint_t best_mode = 0;
+  efi_uint_t bestchars = 0;
+  efi_uint_t bestmode = 0;
+  uint32_t bestwidth, bestheight;
   for (efi_uint_t mode = 0; mode < text_output->mode->maxMode; mode++) {
     efi_uint_t width, height;
     status = text_output->queryMode(text_output, mode, &width, &height);
-    if (status == EFI_SUCCESS)
-    if (width > best_width || height > best_height ) {
-      best_width = width;
-      best_height = height;
-      best_mode = mode;
+    if (status == EFI_SUCCESS) {
+      efi_uint_t chars = width * height;
+      if (chars > bestchars) {
+	bestchars = chars;
+	bestmode = mode;
+	bestwidth = width;
+	bestheight = height;
+      }
     }
   }
-  text_output_width = best_width;
-  text_output_height = best_height;
-  status = text_output->setMode(text_output, best_mode);
+  text_output_width = bestwidth;
+  text_output_height = bestheight;
+  status = text_output->setMode(text_output, bestmode);
   if (status != EFI_SUCCESS)
     return true;
   return false;
@@ -201,16 +198,13 @@ bool mouse_setup() {
   efi_status_t status;
   bool mouse = false;
   struct efi_guid simple_pointer_guid = EFI_SIMPLE_POINTER_PROTOCOL_GUID;
-  struct efi_guid absolute_pointer_guid = EFI_ABSOLUTE_POINTER_PROTOCOL_GUID;
   // Locate Simple Pointer Protocol
   status = system_table->boot_services->locateProtocol(&simple_pointer_guid, NULL, &simple_pointer);
-  if (status == EFI_SUCCESS)
+  if (status == EFI_SUCCESS) {
     mouse = true;
-  // Locate Simple Pointer Protocol
-  status = system_table->boot_services->locateProtocol(&absolute_pointer_guid, NULL, &absolute_pointer);
-  if (status == EFI_SUCCESS)
-    mouse = true;
-
+    pointer.exists = true;
+    pointer.getState = roxus_pointer_get_state;
+  }
   return !mouse;
 }
 

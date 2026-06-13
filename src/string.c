@@ -1,4 +1,4 @@
-#include "string.h"
+#include <roxus/string.h>
 
 // Parses a Decimal Integer, Returns ending position in str pointer
 efi_uint_t parseInt(efi_char_t** str) {

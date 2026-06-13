@@ -1,7 +1,7 @@
 // User Input System
 
-#include "input.h"
-#include "roxus.h"
+#include <roxus/input.h>
+#include <roxus/roxus.h>
 
 efi_status_t input(efi_char_t* string, unsigned length) {
   efi_status_t status;

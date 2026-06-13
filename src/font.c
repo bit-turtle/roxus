@@ -1,8 +1,8 @@
-#include "font.h"
+#include <roxus/font.h>
 #include <stddef.h>
-#include "roxus.h"
-#include "libc.h"
-#include "string.h"
+#include <roxus/roxus.h>
+#include <stdlib.h>
+#include <roxus/string.h>
 
 struct font* loadfont(struct efi_file_protocol* file) {
   if (file == NULL)

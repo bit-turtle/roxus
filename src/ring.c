@@ -1,9 +1,10 @@
 // The One Ring
 
-#include "ring.h"
+#include <roxus/ring.h>
+#include <stdlib.h>
 
 // Forge and Destroy
-struct ringbuffer* forge_ringbuffer(efi_uint_t size) {
+struct ringbuffer* forge_ringbuffer(size_t size) {
 	struct ringbuffer* ring = (struct ringbuffer*)malloc(sizeof (struct ringbuffer));
 	void* buffer = malloc(size);
 	ring->buffer = buffer;
@@ -34,6 +35,13 @@ uint8_t read_ringbuffer(struct ringbuffer* ringbuffer) {
 	// Return read data
 	return data;
 }
-bool data_ringbuffer(struct ringbuffer* ringbuffer) {
+uint8_t peek_ringbuffer(struct ringbuffer* ringbuffer) {
+	return *ringbuffer->read;
+}
+
+size_t data_ringbuffer(struct ringbuffer* ringbuffer) {
+	return ringbuffer->write >= ringbuffer->read ? (size_t)(ringbuffer->write - ringbuffer->read) : (size_t)(ringbuffer->write - ringbuffer->buffer + ringbuffer->end - ringbuffer->read);
+}
+bool unread_ringbuffer(struct ringbuffer* ringbuffer) {
 	return ringbuffer->write != ringbuffer->read;
 }

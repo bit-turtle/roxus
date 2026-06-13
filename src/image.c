@@ -1,8 +1,9 @@
-#include "image.h"
-#include "efi/protocols.h"
+#include <roxus/image.h>
+#include <efi/protocols.h>
+#include <roxus/roxus.h>
 #include <stddef.h>
 
-#include "libc.h"
+#include <stdlib.h>
 
 efi_status_t load_image_buffer(struct efi_file_protocol *file, struct efi_graphics_output_blt_pixel** buffer, uint32_t* width, uint32_t* height) {
   efi_status_t status;
@@ -89,9 +90,27 @@ struct efi_graphics_output_blt_pixel* copy_image_buffer(struct efi_graphics_outp
 	return image;
 }
 
+struct image* allocate_image(uint32_t width, uint32_t height) {
+	struct image* image = malloc(sizeof(struct image));
+	if (image == NULL)
+		return NULL;
+	image->width = width;
+	image->height = height;
+	image->data = malloc(sizeof(struct efi_graphics_output_blt_pixel));
+	if (image->data == NULL) {
+		free(image);
+		return NULL;
+	}
+	return image;
+}
+
 void free_image(struct image* image) {
 	free(image->data);
 	free(image);	
+}
+
+inline struct efi_graphics_output_blt_pixel* get_pixel(struct image* image, uint32_t x, uint32_t y) {
+	return image->data + x + image->width * y;
 }
 
 struct image* load_image(struct efi_file_protocol* file){
@@ -106,16 +125,9 @@ struct image* load_image(struct efi_file_protocol* file){
 }
 
 struct image* resize_image(struct image* source, uint32_t width, uint32_t height) {
-	struct image* image = malloc(sizeof(struct image));
+	struct image* image = allocate_image(width, height);
 	if (image == NULL)
 		return NULL;
-	image->width = width;
-	image->height = height;
-	image->data = malloc(sizeof(struct efi_graphics_output_blt_pixel)*width*height);
-	if (image->data == NULL) {
-		free(image);
-		return NULL;
-	}
 	resize_image_buffer(source->data, source->width, source->height, image->data, width, height);
 	return image;
 }
@@ -136,4 +148,17 @@ struct image* copy_image(struct image* source) {
 		return NULL;
 	}
 	return image;
+}
+
+void fill_image(struct image* image, struct efi_graphics_output_blt_pixel color, uint32_t x, uint32_t y, uint32_t width, uint32_t height) {
+	for (uint32_t filly = y; filly < image->height && filly < y + height; filly++) for (uint32_t fillx = x; fillx < image->width && fillx < x + width; fillx++)
+		*get_pixel(image, fillx, filly) = color;
+}
+void scroll_image(struct image* image, uint32_t y, bool down, uint32_t x, bool right) {
+	for (uint32_t scrolly = down ? y : image->height - y; down ? scrolly < image->height : scrolly >= 0; down ? scrolly++ : scrolly--)
+		for (uint32_t scrollx = right ? image->width - x : x; right ? scrollx >= 0 : scrollx < image->width; right ? scrollx-- : scrollx++)
+			*get_pixel(image, right ? scrollx + x : scrollx - x, down ? scrollx - x : scrollx + x) = *get_pixel(image, scrollx, scrolly);
+}
+void display_image(struct image* image, uint32_t x, uint32_t y) {
+	graphics_output->blt(graphics_output, image->data, EFI_BLT_BUFFER_TO_VIDEO, 0, 0, x, y, image->width, image->height, 0);
 }

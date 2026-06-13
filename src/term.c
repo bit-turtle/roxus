@@ -1,20 +1,20 @@
 // Simple Terminal
 
 #include <stddef.h>
-#include "libc.h"
+#include <stdlib.h>
 
-#include "term.h"
+#include <roxus/term.h>
+#include <roxus/input.h>
+#include <roxus/output.h>
 
-#include "input.h"
-#include "output.h"
-
-#include "string.h"
-#include "bsod.h"
-#include "roxus.h"
-#include "image.h"
-#include "nes.h"
-#include "font.h"
-#include "ring.h"
+#include <roxus/string.h>
+#include <roxus/bsod.h>
+#include <roxus/roxus.h>
+#include <roxus/image.h>
+#include <roxus/nes.h>
+#include <roxus/font.h>
+#include <roxus/ring.h>
+#include <roxus/console.h>
 
 efi_status_t term() {
   efi_status_t status;
@@ -230,10 +230,8 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
       print(u"\n\r");
     }
     else {
-      uint32_t width, height;
-      struct efi_graphics_output_blt_pixel* buffer;
-      status = load_image_buffer(file, &buffer, &width, &height);
-      if (status != EFI_SUCCESS) {
+      struct image* image = load_image(file);
+      if (image == NULL) {
         print(u"Failed to read image: ");
         print(argv[1]);
         print(u"\n\r");
@@ -242,19 +240,21 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
         if (argc > 2) {
           uint32_t newwidth = getInt(argv[2]);
           uint32_t newheight = (argc > 3) ? getInt(argv[3]) : newwidth;
-          struct efi_graphics_output_blt_pixel* newbuffer = malloc(sizeof(struct efi_graphics_output_blt_pixel)*newwidth*newheight);
-          resize_image_buffer(buffer, width, height, newbuffer, newwidth, newheight);
-          free(buffer);
-          if (status == EFI_SUCCESS) {
-            buffer = newbuffer;
-            width = newwidth;
-            height = newheight;
-          }
-          else print(u"Failed to resize image");
+	  struct image* resized = resize_image(image, newwidth, newheight);
+          free_image(image);
+	  image = resized;
+          if (resized == NULL)
+		  print(u"Failed to resize image");
         }
-        graphics_output->blt(graphics_output, buffer, EFI_BLT_BUFFER_TO_VIDEO, 0, 0, 0, 0, width, height, 0);
+	uint32_t x = 0, y = 0;
+	if (argc > 4) {
+		x = getInt(argv[4]);
+		if (argc > 5)
+			y = getInt(argv[5]);
+	}
+       	display_image(image, x, y);
       }
-      free(buffer);
+      free_image(image);
     }
   }
   else if (streq(argv[0], u"cat")) for (efi_uint_t i = 1; i < argc; i++) {
@@ -415,14 +415,72 @@ efi_status_t command(efi_char_t* command, struct efi_file_protocol** dir, bool* 
     }
   }
   else if (streq(argv[0], u"testpointer")) {
-    for (int i = 0; i < 100000; i++) {
 	    struct roxus_pointer_state state = pointer.getState();
-	    efi_char_t buf[160];
-	    print(u"X: ");
-	    print(itoa(state.x, buf, 10));
-	    print(u", Y: ");
-	    print(itoa(state.y, buf, 10));
-	    print(u"\n\r");
+    		struct image* mouse = allocate_image(32,32);
+    		struct image* mouse2 = allocate_image(32,32);
+		struct efi_graphics_output_blt_pixel color = {128, 128, 0, 0xff};
+		struct efi_graphics_output_blt_pixel color2 = {255, 128, 128, 0xff};
+		fill_image(mouse, color, 0, 0, 32, 32);
+		fill_image(mouse, color2, 12, 12, 8, 8);
+		efi_status_t status;
+		status = simple_pointer->reset(simple_pointer, true);	
+		bsod(system_table, status);
+		struct efi_simple_pointer_state pointer_state;
+		uint32_t x = 100, y = 100;
+		uint32_t dx, dy;
+		bool ready = false;
+		if (status == EFI_SUCCESS) while (true) {
+			status = simple_pointer->getState(simple_pointer, &pointer_state);
+			if (status == EFI_NOT_READY) {
+				print(u"Waiting...\r");
+			}
+			else if (status != EFI_SUCCESS) {
+				print(u"Failed to read pointer");
+				break;
+			}
+			else {
+				if (!ready) {
+					print(u"Skip first read");
+					ready = true;
+					continue;
+				}
+				print(u"Read Pointer!\r");
+				dx = pointer_state.movementX/simple_pointer->mode->resolutionX;
+				dy = pointer_state.movementY/simple_pointer->mode->resolutionY;
+				dx = dx * dx;
+				dy = dy * dy;
+				x += dx;
+				y += dy;
+			}
+			display_image(mouse, x, y);
+		}
+		else print(u"Pointer didn't reset\n\r");
+  }
+  else if (streq(argv[0], u"con")) {
+    struct efi_file_protocol* file;
+    status = (*dir)->open(*dir, &file, argv[1], EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+    if (status != EFI_SUCCESS) {
+      print(u"Failed to open file: ");
+      print(argv[1]);
+      print(u"\n\r");
+    }
+    else {
+      struct font* font = loadfont(file);
+      if (font == NULL) {
+        print(u"Failed to load font");
+      }
+      else {
+  	struct console* console = create_console(200, 200, font, 4);
+	if (console == NULL) {
+		print(u"Failed to create console");
+	}
+	else {
+		write_console(console, 'a');
+		write_console(console, 'b');
+		write_console(console, 'c');
+		display_image(console->display, 0, 0);
+	}
+      }
     }
   }
   else {

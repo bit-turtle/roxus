@@ -1,6 +1,6 @@
 // A Blue Screen of Death (Prints EFI error codes)
 
-#include "bsod.h"
+#include <roxus/bsod.h>
 
 efi_status_t bsod(struct efi_system_table* system, efi_status_t error) {
   // Set Screen Color to Blue

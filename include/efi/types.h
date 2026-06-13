@@ -1,0 +1,155 @@
+#include <stdint.h>
+
+#ifndef EFI_TYPES
+#define EFI_TYPES
+
+// Handle
+typedef void* efi_handle_t;
+
+// GUID
+struct efi_guid {
+  uint32_t data1;
+  uint16_t data2;
+  uint16_t data3;
+  uint8_t data4[8];
+};
+
+enum efi_interface_type {
+  EFI_NATIVE_INTERFACE
+};
+
+// Data
+#ifdef ROXUS_32
+typedef uint32_t
+#else
+typedef uint64_t efi_uint_t;
+#endif
+typedef uint16_t efi_char_t;
+
+// Return
+typedef uint64_t efi_status_t;
+
+// Event
+typedef void* efi_event;
+
+// Memory
+typedef uint64_t efi_physical_address_t;
+typedef uint64_t efi_virtual_address_t;
+enum efi_memory_type {
+  EFI_RESERVED_MEMORY_TYPE,
+  EFI_LOADER_CODE,
+  EFI_LOADER_DATA,
+  EFI_BOOT_SERVICES_CODE,
+  EFI_BOOT_SERVICES_DATA,
+  EFI_RUNTIME_SERVICES_CODE,
+  EFI_RUNTIME_SERVICES_DATA,
+  EFI_CONVENTIONAL_MEMORY,
+  EFI_UNUSABLE_MEMORY,
+  EFI_ACPI_RECLAIM_MEMORY,
+  EFI_ACPI_MEMORY_NVS,
+  EFI_MEMORY_MAPPED_IO,
+  EFI_MEMORY_MAPPED_IO_PORT_SPACE,
+  EFI_PAL_CODE,
+  EFI_PERSISTENT_MEMORY,
+  EFI_UNACCEPTED_MEMORY_TYPE,
+  EFI_MAX_MEMORY_TYPE
+};
+
+// Mac Address
+struct efi_mac_address {
+  uint8_t address[32];
+};
+// IP Addresses
+struct efi_ipv4_address {
+  uint8_t address[4];
+};
+struct efi_ipv6_address {
+  uint8_t address[16];
+};
+union efi_ip_address {
+  struct efi_ipv4_address ipv4;
+  struct efi_ipv6_address ipv6;
+};
+
+// Text Attributes
+#define EFI_FOREGROUND 0x0f
+#define EFI_BACKGROUND 0xf0
+
+// Text Colors
+#define EFI_BLACK 0x00
+#define EFI_BLUE 0x01
+#define EFI_GREEN 0x02
+#define EFI_CYAN 0x03
+#define EFI_RED 0x04
+#define EFI_MAGENTA 0x05
+#define EFI_BROWN 0x06
+#define EFI_LIGHTGRAY 0x07
+#define EFI_BRIGHT 0x08
+#define EFI_DARKGRAY 0x08
+#define EFI_LIGHTBLUE 0x09
+#define EFI_LIGHTGREEN 0x0a
+#define EFI_LIGHTCYAN 0x0b
+#define EFI_LIGHTRED 0x0c
+#define EFI_LIGHTMAGENTA 0x0d
+#define EFI_YELLOW 0x0e
+#define EFI_WHITE 0x0f
+
+// Background Colors
+#define EFI_BACKGROUND_BLACK 0x00
+#define EFI_BACKGROUND_BLUE 0x10
+#define EFI_BACKGROUND_GREEN 0x20
+#define EFI_BACKGROUND_CYAN 0x30
+#define EFI_BACKGROUND_RED 0x40
+#define EFI_BACKGROUND_MAGENTA 0x50
+#define EFI_BACKGROUND_BROWN 0x60
+#define EFI_BACKGROUND_LIGHTGRAY 0x70
+
+// EFI Success Code
+#define EFI_SUCCESS 0
+
+// EFI Error Status Codes
+#define EFI_ERROR_BIT ((uint64_t)1 << 63)
+#define EFI_LOAD_ERROR (EFI_ERROR_BIT | 1)
+#define EFI_INVALID_PARAMETER (EFI_ERROR_BIT | 2)
+#define EFI_UNSUPPORTED (EFI_ERROR_BIT | 3)
+#define EFI_BAD_BUFFER_SIZE (EFI_ERROR_BIT | 4)
+#define EFI_BUFFER_TOO_SMALL (EFI_ERROR_BIT | 5)
+#define EFI_NOT_READY (EFI_ERROR_BIT | 6)
+#define EFI_DEVICE_ERROR (EFI_ERROR_BIT | 7)
+#define EFI_WRITE_PROTECTED (EFI_ERROR_BIT | 8)
+#define EFI_OUT_OF_RESOURCES (EFI_ERROR_BIT | 9)
+#define EFI_VOLUME_CORRUPTED (EFI_ERROR_BIT | 10)
+#define EFI_VOLUME_FULL (EFI_ERROR_BIT | 11)
+#define EFI_NO_MEDIA (EFI_ERROR_BIT | 12)
+#define EFI_MEDIA_CHANGED (EFI_ERROR_BIT | 13)
+#define EFI_NOT_FOUND (EFI_ERROR_BIT | 14)
+#define EFI_ACCESS_DENIED (EFI_ERROR_BIT | 15)
+#define EFI_NO_RESPONSE (EFI_ERROR_BIT | 16)
+#define EFI_NO_MAPPING (EFI_ERROR_BIT | 17)
+#define EFI_TIMEOUT (EFI_ERROR_BIT | 18)
+#define EFI_NOT_STARTED (EFI_ERROR_BIT | 19)
+#define EFI_ALREADY_STARTED (EFI_ERROR_BIT | 20)
+#define EFI_ABORTED (EFI_ERROR_BIT | 21)
+#define EFI_ICMP_ERROR (EFI_ERROR_BIT | 22)
+#define EFI_TFTP_ERROR (EFI_ERROR_BIT | 23)
+#define EFI_PROTOCOL_ERROR (EFI_ERROR_BIT | 24)
+#define EFI_INCOMPATIBLE_VERSION (EFI_ERROR_BIT | 25)
+#define EFI_SECURITY_VIOLATION (EFI_ERROR_BIT | 26)
+#define EFI_CRC_ERROR (EFI_ERROR_BIT | 27)
+#define EFI_END_OF_MEDIA (EFI_ERROR_BIT | 28)
+#define EFI_END_OF_FILE (EFI_ERROR_BIT | 31)
+#define EFI_INVALID_LANGUAGE (EFI_ERROR_BIT | 32)
+#define EFI_COMPROMISED_DATA (EFI_ERROR_BIT | 33)
+#define EFI_IP_ADDRESS_CONFLICT (EFI_ERROR_BIT | 34)
+#define EFI_HTTP_ERROR (EFI_ERROR_BIT | 35)
+
+// EFI Warning Codes
+#define EFI_WARN_UNKNOWN_GLYPH 1
+#define EFI_WARN_DELETE_FAILURE 2
+#define EFI_WARN_WRITE_FAILURE 3
+#define EFI_WARN_BUFFER_TOO_SMALL 4
+#define EFI_WARN_STALE_DATA 5
+#define EFI_WARN_FILE_SYSTEM 6
+#define EFI_WARN_RESET_REQUIRED 7
+
+#endif

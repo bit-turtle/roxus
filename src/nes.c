@@ -1,9 +1,9 @@
-#include "nes.h"
+#include <roxus/nes.h>
 #include "efi/types.h"
-#include "roxus.h"
-#include "image.h"
-#include "libc.h"
-#include "string.h"
+#include <roxus/roxus.h>
+#include <roxus/image.h>
+#include <stdlib.h>
+#include <roxus/string.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

@@ -1,6 +1,6 @@
-#include "output.h"
+#include <roxus/output.h>
 
-#include "string.h"
+#include <roxus/string.h>
 
 // Settings
 efi_uint_t tab_size = 8;
