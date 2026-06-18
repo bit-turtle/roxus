@@ -12,7 +12,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Roxus
+      uses: actions/checkout@v4
+    - name: Checkout submodules
+      run: git submodule update --init --recursive
     - name: Install Build Tools
       run: sudo apt-get install tup clang lld
     - name: Build Roxus
