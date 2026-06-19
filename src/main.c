@@ -17,6 +17,8 @@
 
 #include <utf8/utf8.h>
 
+#include "cpptest/cpptest.h"
+
 efi_status_t efi_main(efi_handle_t handle, struct efi_system_table* system) {
   efi_status_t status;
   
@@ -28,6 +30,10 @@ efi_status_t efi_main(efi_handle_t handle, struct efi_system_table* system) {
   
   // Enable Cursor
  system->output->enableCursor(system->output, true);
+
+	// C++ test
+	if (cpptest() != 0x4c8)
+		bsod(system, 1);
 
 	// Terminal
   status = term();

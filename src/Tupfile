@@ -1,0 +1,6 @@
+# src Tupfile
+
+CCSOURCE += $(TUP_CWD)/*.c
+CXXSOURCE += $(TUP_CWD)/*.cpp
+include nes/Tupfile
+include cpptest/Tupfile
