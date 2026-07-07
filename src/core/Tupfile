@@ -1,4 +1,4 @@
-# test Tupfile
+# Program Interface Tupfile
 
 CCSOURCE += $(TUP_CWD)/*.c
 CXXSOURCE += $(TUP_CWD)/*.cpp
