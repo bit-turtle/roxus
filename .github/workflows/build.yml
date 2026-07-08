@@ -14,7 +14,7 @@ jobs:
     steps:
     - name: Checkout Roxus
       uses: actions/checkout@v4
-    - name: Checkout submodules
+    - name: Checkout Submodules
       run: git submodule update --init --recursive
     - name: Install Build Tools
       run: sudo apt-get install tup clang lld
